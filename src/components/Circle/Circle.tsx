@@ -2,8 +2,15 @@ import './Circle.css';
 
 function Circle() {
 
+
     return (
-        <div className="circle" />
+        <svg>
+            <circle
+                cx="150"
+                cy="77"
+                r="25"
+            />
+        </svg>
     );
 }
 
