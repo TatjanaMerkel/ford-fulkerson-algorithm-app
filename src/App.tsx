@@ -1,21 +1,11 @@
-import React from 'react';
-import './App.css';
+import Circle from "./components/Circle";
 
-
-class App extends React.Component {
-    
-
-    constructor(props: any) {
-        super(props);
-
-    }
-
-    render() {
-        return (<div>
-
-            </div>
-        )
-    }
+function App() {
+    return (
+        <div>
+            <Circle />
+        </div>
+    );
 }
 
 export default App;
