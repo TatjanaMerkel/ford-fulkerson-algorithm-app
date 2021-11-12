@@ -1,4 +1,4 @@
-import Circle from "./components/Circle";
+import Circle from "./components/Circle/Circle";
 
 function App() {
     return (
