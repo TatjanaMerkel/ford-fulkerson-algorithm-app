@@ -1,16 +1,12 @@
 import * as d3 from 'd3';
-import {useEffect, useRef} from "react";
+import {useEffect, useRef, useState} from "react";
 import './Nodes.css';
 
-function Nodes() {
+function Nodes(props: any) {
     const colors = d3.schemeCategory10;
     const ref: any = useRef()
 
-
-    function mousedown(event: any) {
-        if (event.type === "mousedown")
-            console.log("Clicked!")
-    }
+    const nodes = new Array<any>();
 
     useEffect(() => {
         const svg = d3.select(ref.current)
@@ -36,12 +32,17 @@ function Nodes() {
     })
 
 
+    const mousedown = (event: any) => {
+        // insert new node with at point
+        const point = d3.pointer(event);
+        const node = { x: point[0], y: point[1]};
+        nodes.push(node);
+        console.log(nodes);
+    }
+
+
     return (
-        <div ref={ref}>
-
-        </div>
-
-
+        <div ref={ref} />
     );
 }
 
