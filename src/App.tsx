@@ -1,11 +1,10 @@
-import Circle from "./components/Circle/Circle";
+import Nodes from "./components/Circle/Nodes";
 import Circle2 from "./components/Circle/Circle2";
 
 function App() {
     return (
         <div>
-            <Circle />
-            <Circle2 />
+            <Nodes />
         </div>
     );
 }
