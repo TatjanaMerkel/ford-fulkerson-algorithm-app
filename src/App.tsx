@@ -1,9 +1,9 @@
-import Nodes from "./components/Circle/Nodes";
+import NetworkField from "./components/NetworkField";
 
 function App() {
     return (
         <div>
-            <Nodes />
+            <NetworkField />
         </div>
     );
 }
