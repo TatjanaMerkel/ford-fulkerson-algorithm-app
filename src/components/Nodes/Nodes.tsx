@@ -43,7 +43,7 @@ class Nodes extends React.Component<any, any> {
             .attr('class', 'id')
             .text((d: any) => d.id)
             .attr('transform', (d: any) => `translate(${d.x},${d.y})`);
-        
+
 
     }
 
