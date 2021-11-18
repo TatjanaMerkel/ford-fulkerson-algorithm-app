@@ -1,9 +1,10 @@
-import NetworkField from "./components/NetworkField/NetworkField";
+// import NetworkField from "./components/NetworkField/NetworkField";
+import Nodes from './components/Nodes/Nodes'
 
 function App() {
     return (
         <div>
-            <NetworkField />
+            <Nodes />
         </div>
     );
 }

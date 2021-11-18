@@ -4,11 +4,22 @@
 }
 
 text {
-    font: 12px sans-serif;
+    font: 16px sans-serif;
     pointer-events: none;
 }
 
 text.id {
     text-anchor: middle;
     font-weight: bold;
+}
+
+svg {
+    background-color: #986464;
+    cursor: default;
+    border: 2px solid black;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    -o-user-select: none;
+    user-select: none;
 }
