@@ -1,4 +1,4 @@
-import NetworkField from "./components/NetworkField";
+import NetworkField from "./components/NetworkField/NetworkField";
 
 function App() {
     return (
