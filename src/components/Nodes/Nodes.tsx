@@ -5,7 +5,7 @@ import './Nodes.css';
 
 class Nodes extends React.Component<any, any> {
 
-    colors = d3.schemeCategory10;
+    colors = d3.scaleOrdinal(d3.schemeCategory10);
     nodes = new Array<any>();
     lastNodeId: number = 0;
     circle: any;
@@ -26,7 +26,7 @@ class Nodes extends React.Component<any, any> {
         this.circle.attr('transform', (d: any) => `translate(${d.x},${d.y})`);
         this.circle = this.circle.data(this.nodes, (d: any) => d.id)
         this.circle.selectAll('circle')
-            .style('fill', () => d3.rgb(this.colors[2]).brighter().toString())
+            .style('fill', (d: any) => d3.rgb(this.colors(d.id)).brighter().toString())
 
         const g = this.circle.enter().append('svg:g')
         g.append('svg:circle')
@@ -34,8 +34,8 @@ class Nodes extends React.Component<any, any> {
             .attr('cx', this.nodes[this.nodes.length - 1].x)
             .attr('cy', this.nodes[this.nodes.length - 1].y)
             .attr('r', 25)
-            .style('fill', () => d3.rgb(this.colors[2]).brighter().toString())
-            .style('stroke', () => d3.rgb(this.colors[2]).darker().toString())
+            .style('fill', (d: any) => d3.rgb(this.colors(d.id)).brighter().toString())
+            .style('stroke', (d: any) => d3.rgb(this.colors(d.id)).darker().toString())
 
         g.append('svg:text')
             .attr('x', 0)
