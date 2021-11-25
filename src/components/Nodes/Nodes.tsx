@@ -1,47 +1,52 @@
-import React from "react";
-import * as d3 from "d3";
-import './Nodes.css';
+import React from "react"
+import * as d3 from "d3"
+import './Nodes.css'
+
+interface Node {
+    id: number
+    x: number
+    y: number
+}
 
 
 class Nodes extends React.Component<any, any> {
 
 
-    svgRef: React.RefObject<any>;
+    divRef: React.RefObject<HTMLDivElement>;
     width = 960;
     height = 500;
     svg: any;
 
     colors = d3.scaleOrdinal(d3.schemeCategory10);
-    nodes = new Array<any>();
+    nodes = new Array<Node>();
     lastNodeId: number = 0;
-    force: any;
-    path: any;
-    circle: any;
+    simulation: any;
+    links: any;
+    circles: any;
 
 
     constructor(props: any) {
         super(props);
-        this.svgRef = React.createRef();
+        this.divRef = React.createRef();
     }
 
     componentDidMount() {
-        this.svg = d3.select(this.svgRef.current)
+        this.svg = d3.select(this.divRef.current)
             .append("svg")
             .attr("width", this.width)
             .attr("height", this.height)
-            .on('contextmenu', (event, d) => { event.preventDefault(); })
+            .on('contextmenu', (event) => { event.preventDefault() })
 
         this.nodes = [
-            { id: 0 },
-            { id: 1 },
-            { id: 2}
+            { id: 0, x: 0, y: 0 },
+            { id: 1, x: 1, y: 1 },
+            { id: 2, x: 0, y: 2}
         ];
 
         this.lastNodeId = 2;
 
-
         // init D3 force layout
-        this.force = d3.forceSimulation()
+        this.simulation = d3.forceSimulation()
             .force('link', d3.forceLink().id((d: any) => d.id).distance(150))
             .force('charge', d3.forceManyBody().strength(-500))
             .force('x', d3.forceX(this.width / 2))
@@ -50,19 +55,17 @@ class Nodes extends React.Component<any, any> {
 
 
         // handles to link and node element groups
-        this.path = this.svg.append('svg:g').selectAll('path');
-        this.circle = this.svg.append('svg:g').selectAll('g');
+        this.links = this.svg.append('svg:g').selectAll('path');
+        this.circles = this.svg.append('svg:g').selectAll('g');
 
         // app starts here
-        this.svg.on('mousedown', (event: any, d: any) => this.mousedown(event, d))
+        this.svg.on('mousedown', (event: Event) => this.mousedown(event))
 
         this.restart();
     }
 
-
-
     tick() {
-        this.path.attr('d', (d: any) => {
+        this.links.attr('d', (d: any) => {
             const deltaX = d.target.x - d.source.x;
             const deltaY = d.target.y - d.source.y;
             const dist = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
@@ -78,44 +81,39 @@ class Nodes extends React.Component<any, any> {
             return `M${sourceX},${sourceY}L${targetX},${targetY}`;
         });
 
-        this.circle.attr('transform', (d: any) => `translate(${d.x},${d.y})`);
+        this.circles.attr('transform', (d: any) => `translate(${d.x},${d.y})`);
     }
 
     restart() {
 
-        this.circle = this.circle.data(this.nodes, (d: any) => d.id);
+        this.circles = this.circles.data(this.nodes, (d: any) => d.id);
 
         // add new nodes
-        const g = this.circle.enter().append('svg:g');
+        const group = this.circles.join('svg:g');
 
-        g.append('svg:circle')
+        group.append('svg:circle')
             .attr('class', 'node')
             .attr('r', 20)
             .style('fill', (d: any) =>  d3.rgb(this.colors(d.id)).brighter().toString())
-            .style('stroke', (d: any) => d3.rgb(this.colors(d.id)).darker().toString())
-            .on('mousedown', (event: any, d: any) => {
-                if (event.ctrlKey) return;
-
-                this.restart();
-            });
+            .style('stroke', (d: any) => d3.rgb(this.colors(d.id)).darker().toString());
 
         // show node IDs
-        g.append('svg:text')
+        group.append('svg:text')
             .attr('x', 0)
             .attr('y', 4)
             .attr('class', 'id')
             .text((d: any) => d.id);
 
-        this.circle = g.merge(this.circle);
+        this.circles = group.merge(this.circles);
 
         // set the graph in motion
-        this.force
+        this.simulation
             .nodes(this.nodes)
 
-        this.force.alphaTarget(0.3).restart();
+        this.simulation.alpha(1).restart();
     }
 
-    mousedown(event: any, d: any) {
+    mousedown(event: Event) {
 
         // insert new node at point
         const point = d3.pointer(event);
@@ -128,7 +126,7 @@ class Nodes extends React.Component<any, any> {
 
     render() {
         return (
-            <div ref={this.svgRef}> </div>
+            <div ref={this.divRef}> </div>
         )
     }
 
