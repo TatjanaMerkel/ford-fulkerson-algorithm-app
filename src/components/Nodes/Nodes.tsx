@@ -8,21 +8,27 @@ interface Node {
     y: number
 }
 
+interface Links {
+    source: Node
+    target: Node
+}
 
 class Nodes extends React.Component<any, any> {
-
 
     divRef: React.RefObject<HTMLDivElement>;
     width = 960;
     height = 500;
     svg: any;
+    dragLine: any;
 
     colors = d3.scaleOrdinal(d3.schemeCategory10);
     nodes = new Array<Node>();
+    links = new Array<Links>();
     lastNodeId: number = 0;
     simulation: any;
-    links: any;
+    path: any;
     circles: any;
+    private selectedLink: any;
 
 
     constructor(props: any) {
@@ -35,15 +41,22 @@ class Nodes extends React.Component<any, any> {
             .append("svg")
             .attr("width", this.width)
             .attr("height", this.height)
-            .on('contextmenu', (event) => { event.preventDefault() })
+            .on('contextmenu', (event) => {
+                event.preventDefault()
+            })
 
         this.nodes = [
-            { id: 0, x: 0, y: 0 },
-            { id: 1, x: 1, y: 1 },
-            { id: 2, x: 0, y: 2}
+            {id: 0, x: 0, y: 0},
+            {id: 1, x: 1, y: 1},
+            {id: 2, x: 0, y: 2}
         ];
 
         this.lastNodeId = 2;
+
+        this.links = [
+            {source: this.nodes[0], target: this.nodes[1]},
+            {source: this.nodes[1], target: this.nodes[2]}
+        ];
 
         // init D3 force layout
         this.simulation = d3.forceSimulation()
@@ -54,8 +67,22 @@ class Nodes extends React.Component<any, any> {
             .on('tick', () => this.tick());
 
 
+        // define links for graph links
+        this.svg.append('svg:defs').append('svg:marker')
+            .attr('id', 'end-arrow')
+            .attr('viewBox', '0 -5 10 10')
+            .attr('refX', 6)
+            .attr('markerWidth', 10)
+            .attr('markerHeight', 10)
+            .attr('markerUnits', "userSpaceOnUse")
+            .attr('orient', 'auto')
+            .append('svg:path')
+            .attr('d', 'M0,-5L10,0L0,5')
+            .attr('fill', '#000');
+
+
         // handles to link and node element groups
-        this.links = this.svg.append('svg:g').selectAll('path');
+        this.path = this.svg.append('svg:g').selectAll('path');
         this.circles = this.svg.append('svg:g').selectAll('g');
 
         // app starts here
@@ -65,14 +92,14 @@ class Nodes extends React.Component<any, any> {
     }
 
     tick() {
-        this.links.attr('d', (d: any) => {
+        this.path.attr('d', (d: any) => {
             const deltaX = d.target.x - d.source.x;
             const deltaY = d.target.y - d.source.y;
             const dist = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
             const normX = deltaX / dist;
             const normY = deltaY / dist;
-            const sourcePadding = d.left ? 17 : 12;
-            const targetPadding = d.right ? 17 : 12;
+            const sourcePadding = 12;
+            const targetPadding = 17;
             const sourceX = d.source.x + (sourcePadding * normX);
             const sourceY = d.source.y + (sourcePadding * normY);
             const targetX = d.target.x - (targetPadding * normX);
@@ -86,6 +113,19 @@ class Nodes extends React.Component<any, any> {
 
     restart() {
 
+        /* Links */
+        // path (link) group
+        this.path = this.path.data(this.links);
+
+        // add new links
+        this.path = this.path.join('svg:path')
+            .attr('class', 'link')
+            .merge(this.path);
+
+
+
+        /* NODES */
+        //binding the nodes
         this.circles = this.circles.data(this.nodes, (d: any) => d.id);
 
         // add new nodes
@@ -94,7 +134,7 @@ class Nodes extends React.Component<any, any> {
         group.append('svg:circle')
             .attr('class', 'node')
             .attr('r', 20)
-            .style('fill', (d: any) =>  d3.rgb(this.colors(d.id)).brighter().toString())
+            .style('fill', (d: any) => d3.rgb(this.colors(d.id)).brighter().toString())
             .style('stroke', (d: any) => d3.rgb(this.colors(d.id)).darker().toString());
 
         // show node IDs
@@ -107,6 +147,7 @@ class Nodes extends React.Component<any, any> {
         this.circles = group.merge(this.circles);
 
         // set the graph in motion
+        // selection.nodes(): return the array of selection that contains HTML elements
         this.simulation
             .nodes(this.nodes)
 
@@ -117,7 +158,7 @@ class Nodes extends React.Component<any, any> {
 
         // insert new node at point
         const point = d3.pointer(event);
-        const node = { id: ++this.lastNodeId, x: point[0], y: point[1] };
+        const node = {id: ++this.lastNodeId, x: point[0], y: point[1]};
         this.nodes.push(node);
 
         this.restart();
@@ -126,10 +167,9 @@ class Nodes extends React.Component<any, any> {
 
     render() {
         return (
-            <div ref={this.divRef}> </div>
+            <div ref={this.divRef}/>
         )
     }
-
 }
 
 export default Nodes;
