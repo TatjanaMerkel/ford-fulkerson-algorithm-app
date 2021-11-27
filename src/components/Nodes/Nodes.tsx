@@ -20,6 +20,7 @@ class Nodes extends React.Component<any, any> {
     height = 500;
     svg: any;
     dragLine: any;
+    drag: any;
 
     colors = d3.scaleOrdinal(d3.schemeCategory10);
     nodes = new Array<Node>();
@@ -28,7 +29,7 @@ class Nodes extends React.Component<any, any> {
     simulation: any;
     path: any;
     circles: any;
-    private selectedLink: any;
+    selectedNode: any = null;
 
 
     constructor(props: any) {
@@ -67,6 +68,12 @@ class Nodes extends React.Component<any, any> {
             .on('tick', () => this.tick());
 
 
+        this.drag = d3.drag()
+            .on("start", this.dragStarted)
+            .on("drag", this.dragged)
+            .on("end", this.dragEnded);
+
+
         // define links for graph links
         this.svg.append('svg:defs').append('svg:marker')
             .attr('id', 'end-arrow')
@@ -90,6 +97,19 @@ class Nodes extends React.Component<any, any> {
 
         this.restart();
     }
+
+    dragStarted() {
+
+    }
+
+    dragged() {
+
+    }
+
+    dragEnded() {
+
+    }
+
 
     tick() {
         this.path.attr('d', (d: any) => {
@@ -123,7 +143,6 @@ class Nodes extends React.Component<any, any> {
             .merge(this.path);
 
 
-
         /* NODES */
         //binding the nodes
         this.circles = this.circles.data(this.nodes, (d: any) => d.id);
@@ -135,7 +154,8 @@ class Nodes extends React.Component<any, any> {
             .attr('class', 'node')
             .attr('r', 20)
             .style('fill', (d: any) => d3.rgb(this.colors(d.id)).brighter().toString())
-            .style('stroke', (d: any) => d3.rgb(this.colors(d.id)).darker().toString());
+            .style('stroke', (d: any) => d3.rgb(this.colors(d.id)).darker().toString())
+            .call(this.drag);
 
         // show node IDs
         group.append('svg:text')
