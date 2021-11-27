@@ -31,7 +31,6 @@ class Nodes extends React.Component<any, any> {
     circles: any;
     selectedNode: any = null;
 
-
     constructor(props: any) {
         super(props);
         this.divRef = React.createRef();
@@ -99,7 +98,6 @@ class Nodes extends React.Component<any, any> {
     }
 
     dragStarted() {
-
     }
 
     dragged() {
@@ -153,9 +151,15 @@ class Nodes extends React.Component<any, any> {
         group.append('svg:circle')
             .attr('class', 'node')
             .attr('r', 20)
-            .style('fill', (d: any) => d3.rgb(this.colors(d.id)).brighter().toString())
+            .style('fill', (d: any) => (d === this.selectedNode) ? d3.rgb(this.colors(d.id)).brighter().toString() : this.colors(d.id))
             .style('stroke', (d: any) => d3.rgb(this.colors(d.id)).darker().toString())
-            .call(this.drag);
+            .call(this.drag)
+            .on('click', (event: any, d: any) => {
+                    this.selectedNode = d;
+                    this.restart()
+                }
+            )
+
 
         // show node IDs
         group.append('svg:text')
