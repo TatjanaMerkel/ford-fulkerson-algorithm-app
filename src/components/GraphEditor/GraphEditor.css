@@ -1,0 +1,6 @@
+svg {
+    background-color: #649698;
+    cursor: default;
+    border: 2px solid black;
+    user-select: none;
+}
