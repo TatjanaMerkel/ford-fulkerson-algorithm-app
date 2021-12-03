@@ -16,8 +16,6 @@ interface Links {
 class Nodes extends React.Component<any, any> {
 
     divRef: React.RefObject<HTMLDivElement>;
-    width = 960;
-    height = 500;
     svg: any;
     dragLine: any;
     drag: any;
@@ -37,10 +35,13 @@ class Nodes extends React.Component<any, any> {
     }
 
     componentDidMount() {
+        const width = 960;
+        const height = 500;
+
         this.svg = d3.select(this.divRef.current)
             .append("svg")
-            .attr("width", this.width)
-            .attr("height", this.height)
+            .attr("width", width)
+            .attr("height", height)
             .on('contextmenu', (event) => {
                 event.preventDefault()
             })
@@ -62,8 +63,8 @@ class Nodes extends React.Component<any, any> {
         this.simulation = d3.forceSimulation()
             .force('link', d3.forceLink().id((d: any) => d.id).distance(150))
             .force('charge', d3.forceManyBody().strength(-500))
-            .force('x', d3.forceX(this.width / 2))
-            .force('y', d3.forceY(this.height / 2))
+            .force('x', d3.forceX(width / 2))
+            .force('y', d3.forceY(height / 2))
             .on('tick', () => this.tick());
 
 
