@@ -4,3 +4,16 @@ svg {
     border: 2px solid black;
     user-select: none;
 }
+
+.node {
+    fill: green;
+    stroke-width: 1px;
+    cursor: pointer;
+}
+
+.link {
+    fill: red;
+    stroke: #000;
+    stroke-width: 4px;
+    cursor: default;
+}
