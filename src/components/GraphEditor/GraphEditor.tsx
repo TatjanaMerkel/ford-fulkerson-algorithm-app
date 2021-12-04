@@ -6,6 +6,7 @@ import './GraphEditor.css'
 interface Node {
     x: number
     y: number
+    color: number
 }
 
 interface Link {
@@ -38,9 +39,9 @@ class GraphEditor extends React.Component {
             })
 
         const nodes = [
-            {x: 100, y: 100},
-            {x: 150, y: 200},
-            {x: 500, y: 300}
+            {color: 0, x: 100, y: 100},
+            {color: 1, x: 150, y: 200},
+            {color: 2, x: 500, y: 300}
         ]
 
         const links = [
@@ -56,6 +57,8 @@ class GraphEditor extends React.Component {
             .on('tick', () => tick())
 
         simulation.restart()
+
+        const colors = d3.scaleOrdinal(d3.schemeCategory10)
 
         function tick() {
             console.log('tick')
@@ -75,9 +78,11 @@ class GraphEditor extends React.Component {
                 .data(nodes)
                 .join('circle')
                 .classed('node', true)
-                .attr('r', 12)
+                .attr('r', 20)
                 .attr('cx', (node: Node) => node.x)
                 .attr('cy', (node: Node) => node.y)
+                .style('fill', (node: any) => d3.rgb(colors(node.color)).brighter().toString())
+                .style('stroke', (node: any) => d3.rgb(colors(node.color)).darker().toString())
         }
     }
 
