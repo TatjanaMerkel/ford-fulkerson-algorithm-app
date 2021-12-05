@@ -48,16 +48,16 @@ class GraphEditor extends React.Component {
             .on('contextmenu', (event: Event) => {
                 event.preventDefault()
             })
+            .on('mousedown', spawn)
 
         const svgLinks = svg.selectAll('.link')
             .data(links)
             .join('line')
             .classed('link', true)
 
-        const svgGroups = svg.selectAll('g')
+        let svgGroups = svg.selectAll('g')
             .data(nodes)
-            .join('g')
-            .classed('blub', true)
+            .enter().append('g')
 
         svgGroups.append('circle')
             .classed('node', true)
@@ -86,6 +86,39 @@ class GraphEditor extends React.Component {
 
             svgGroups
                 .attr('transform', (node: Node) => `translate(${node.x},${node.y})`)
+        }
+
+        function spawn(event: any, d: any) {
+            svg.classed('active', event.currentTarget)
+
+            // insert new node at point
+            // const [x, y] = event
+            const point = d3.pointer(event)
+            const node = {name: 'X', color: 5, x: point[0], y: point[1]}
+
+            nodes.push(node)
+            console.log(nodes)
+            simulation.nodes(nodes)
+
+            const newSvgGroup = svg.selectAll('g')
+                .data(nodes)
+                .enter().append('g')
+
+            newSvgGroup.append('circle')
+                .classed('node', true)
+                .attr('r', 20)
+                .style('fill', (node: Node) => d3.rgb(colors(String(node.color))).brighter().toString())
+                .style('stroke', (node: Node) => d3.rgb(colors(String(node.color))).darker().toString())
+
+            newSvgGroup.append('text')
+                .text((node: Node) => node.name)
+
+            newSvgGroup
+                .attr('transform', (node: Node) => `translate(${node.x},${node.y})`)
+
+            svgGroups = newSvgGroup.merge(svgGroups)
+
+            simulation.alpha(1).restart()
         }
     }
 
