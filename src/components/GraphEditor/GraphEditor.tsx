@@ -1,12 +1,12 @@
 import React, {RefObject} from 'react'
 import * as d3 from 'd3'
-import {Selection} from 'd3'
 import './GraphEditor.css'
 
 interface Node {
+    name: string
+    color: number
     x: number
     y: number
-    color: number
 }
 
 interface Link {
@@ -18,8 +18,6 @@ class GraphEditor extends React.Component {
 
     divRef: RefObject<HTMLDivElement>
 
-    // svg: undefined | Selection<SVGSVGElement, unknown, null, undefined>
-
     constructor(props: any) {
         super(props)
 
@@ -30,6 +28,19 @@ class GraphEditor extends React.Component {
         const width = 960
         const height = 500
 
+        const nodes = [
+            {name: 'A', color: 0, x: 100, y: 100},
+            {name: 'B', color: 1, x: 150, y: 200},
+            {name: 'C', color: 2, x: 500, y: 300}
+        ]
+
+        const links = [
+            {source: nodes[0], target: nodes[1]},
+            {source: nodes[1], target: nodes[2]}
+        ]
+
+        const colors = d3.scaleOrdinal(d3.schemeCategory10)
+
         const svg = d3.select(this.divRef.current)
             .append('svg')
             .attr('width', width)
@@ -38,16 +49,24 @@ class GraphEditor extends React.Component {
                 event.preventDefault()
             })
 
-        const nodes = [
-            {color: 0, x: 100, y: 100},
-            {color: 1, x: 150, y: 200},
-            {color: 2, x: 500, y: 300}
-        ]
+        const svgLinks = svg.selectAll('.link')
+            .data(links)
+            .join('line')
+            .classed('link', true)
 
-        const links = [
-            {source: nodes[0], target: nodes[1]},
-            {source: nodes[1], target: nodes[2]}
-        ]
+        const svgGroups = svg.selectAll('g')
+            .data(nodes)
+            .join('g')
+            .classed('blub', true)
+
+        svgGroups.append('circle')
+            .classed('node', true)
+            .attr('r', 20)
+            .style('fill', (node: Node) => d3.rgb(colors(String(node.color))).brighter().toString())
+            .style('stroke', (node: Node) => d3.rgb(colors(String(node.color))).darker().toString())
+
+        svgGroups.append('text')
+            .text((node: Node) => node.name)
 
         const simulation = d3.forceSimulation(nodes)
             .force('link', d3.forceLink(links).distance(150))
@@ -58,31 +77,15 @@ class GraphEditor extends React.Component {
 
         simulation.restart()
 
-        const colors = d3.scaleOrdinal(d3.schemeCategory10)
-
         function tick() {
-            console.log('tick')
-            console.log(nodes)
-            console.log(links)
-
-            svg.selectAll('.link')
-                .data(links)
-                .join('line')
-                .classed('link', true)
+            svgLinks
                 .attr('x1', (link: Link) => link.source.x)
                 .attr('y1', (link: Link) => link.source.y)
                 .attr('x2', (link: Link) => link.target.x)
                 .attr('y2', (link: Link) => link.target.y)
 
-            svg.selectAll('.node')
-                .data(nodes)
-                .join('circle')
-                .classed('node', true)
-                .attr('r', 20)
-                .attr('cx', (node: Node) => node.x)
-                .attr('cy', (node: Node) => node.y)
-                .style('fill', (node: any) => d3.rgb(colors(node.color)).brighter().toString())
-                .style('stroke', (node: any) => d3.rgb(colors(node.color)).darker().toString())
+            svgGroups
+                .attr('transform', (node: Node) => `translate(${node.x},${node.y})`)
         }
     }
 
