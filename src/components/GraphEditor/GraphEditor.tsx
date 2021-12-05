@@ -1,6 +1,7 @@
-import React, {RefObject} from 'react'
-import * as d3 from 'd3'
 import './GraphEditor.css'
+import * as d3 from 'd3'
+import React, {RefObject} from 'react'
+import {Selection} from 'd3'
 
 interface Node {
     name: string
@@ -55,18 +56,28 @@ class GraphEditor extends React.Component {
             .join('line')
             .classed('link', true)
 
-        let svgGroups = svg.selectAll('g')
-            .data(nodes)
-            .enter().append('g')
+        let svgGroups: Selection<any, Node, SVGSVGElement, unknown>
 
-        svgGroups.append('circle')
-            .classed('node', true)
-            .attr('r', 20)
-            .style('fill', (node: Node) => d3.rgb(colors(String(node.color))).brighter().toString())
-            .style('stroke', (node: Node) => d3.rgb(colors(String(node.color))).darker().toString())
+        function updateSvgNodes(nodes: Node[]): void {
+            svgGroups = svg.selectAll('g').data(nodes)
 
-        svgGroups.append('text')
-            .text((node: Node) => node.name)
+            let newSvgGroups = svg.selectAll('g')
+                .data(nodes)
+                .enter().append('g')
+
+            newSvgGroups.append('circle')
+                .classed('node', true)
+                .attr('r', 20)
+                .style('fill', (node: Node) => d3.rgb(colors(String(node.color))).brighter().toString())
+                .style('stroke', (node: Node) => d3.rgb(colors(String(node.color))).darker().toString())
+
+            newSvgGroups.append('text')
+                .text((node: Node) => node.name)
+
+            svgGroups = newSvgGroups.merge(svgGroups)
+        }
+
+        updateSvgNodes(nodes)
 
         const simulation = d3.forceSimulation(nodes)
             .force('link', d3.forceLink(links).distance(150))
@@ -88,35 +99,13 @@ class GraphEditor extends React.Component {
                 .attr('transform', (node: Node) => `translate(${node.x},${node.y})`)
         }
 
-        function spawn(event: any, d: any) {
-            svg.classed('active', event.currentTarget)
-
-            // insert new node at point
-            // const [x, y] = event
-            const point = d3.pointer(event)
-            const node = {name: 'X', color: 5, x: point[0], y: point[1]}
-
+        function spawn(event: Event) {
+            const [x, y] = d3.pointer(event)
+            const node = {name: 'X', color: 5, x, y}
             nodes.push(node)
-            console.log(nodes)
+
             simulation.nodes(nodes)
-
-            const newSvgGroup = svg.selectAll('g')
-                .data(nodes)
-                .enter().append('g')
-
-            newSvgGroup.append('circle')
-                .classed('node', true)
-                .attr('r', 20)
-                .style('fill', (node: Node) => d3.rgb(colors(String(node.color))).brighter().toString())
-                .style('stroke', (node: Node) => d3.rgb(colors(String(node.color))).darker().toString())
-
-            newSvgGroup.append('text')
-                .text((node: Node) => node.name)
-
-            newSvgGroup
-                .attr('transform', (node: Node) => `translate(${node.x},${node.y})`)
-
-            svgGroups = newSvgGroup.merge(svgGroups)
+            updateSvgNodes(nodes)
 
             simulation.alpha(1).restart()
         }
