@@ -17,6 +17,7 @@ class Nodes extends React.Component<any, any> {
 
     divRef: React.RefObject<HTMLDivElement>
     svg: any
+    dragLine: any
     drag: any
 
     colors = d3.scaleOrdinal(d3.schemeCategory10)
@@ -66,6 +67,13 @@ class Nodes extends React.Component<any, any> {
             .force('y', d3.forceY(height / 2))
             .on('tick', () => this.tick())
 
+
+        this.drag = d3.drag()
+            .on('start', this.dragStarted)
+            .on('drag', this.dragged)
+            .on('end', this.dragEnded)
+
+
         // define links for graph links
         this.svg.append('svg:defs').append('svg:marker')
             .attr('id', 'end-arrow')
@@ -79,6 +87,7 @@ class Nodes extends React.Component<any, any> {
             .attr('d', 'M0,-5L10,0L0,5')
             .attr('fill', '#000')
 
+
         // handles to link and node element groups
         this.path = this.svg.append('svg:g').selectAll('path')
         this.circles = this.svg.append('svg:g').selectAll('g')
@@ -88,6 +97,18 @@ class Nodes extends React.Component<any, any> {
 
         this.restart()
     }
+
+    dragStarted() {
+    }
+
+    dragged() {
+
+    }
+
+    dragEnded() {
+
+    }
+
 
     tick() {
         this.path.attr('d', (d: any) => {
@@ -120,6 +141,7 @@ class Nodes extends React.Component<any, any> {
             .attr('class', 'link')
             .merge(this.path)
 
+
         /* NODES */
         //binding the nodes
         this.circles = this.circles.data(this.nodes, (d: any) => d.id)
@@ -138,6 +160,7 @@ class Nodes extends React.Component<any, any> {
                     this.restart()
                 }
             )
+
 
         // show node IDs
         group.append('svg:text')
@@ -165,6 +188,7 @@ class Nodes extends React.Component<any, any> {
 
         this.restart()
     }
+
 
     render() {
         return (
