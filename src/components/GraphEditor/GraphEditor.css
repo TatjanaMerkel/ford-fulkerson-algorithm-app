@@ -11,9 +11,8 @@ svg {
     cursor: pointer;
 }
 
-.link {
-    fill: red;
-    stroke: #000;
+.link, .dragline {
+    stroke: black;
     stroke-width: 4px;
     cursor: default;
 }
@@ -22,4 +21,8 @@ text {
     text-anchor: middle;
     dominant-baseline: middle;
     font-weight: bold;
+}
+
+.hidden {
+    display: none;
 }

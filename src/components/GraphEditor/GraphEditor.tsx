@@ -50,11 +50,58 @@ class GraphEditor extends React.Component {
                 event.preventDefault()
             })
             .on('mousedown', spawn)
+            .on('mousemove', (event: Event) => {
+                if (dragStartNode === null) {
+                    return
+                }
 
-        const svgLinks = svg.selectAll('.link')
-            .data(links)
-            .join('line')
-            .classed('link', true)
+                const [x, y] = d3.pointer(event)
+
+                dragLine
+                    .attr('x1', dragStartNode.x)
+                    .attr('y1', dragStartNode.y)
+                    .attr('x2', x)
+                    .attr('y2', y)
+            })
+            .on('mouseup', () => {
+                dragLine.classed('hidden', true)
+                dragStartNode = null
+            })
+
+        let svgLinks: Selection<any, Link, SVGSVGElement, unknown>
+
+        function updateSvgLinks(links: Link[]): void {
+            svgLinks = svg.selectAll('.link').data(links)
+
+            const newSvgLink = svgLinks
+                .enter().append('line')
+                .classed('link', true)
+
+            svgLinks = newSvgLink.merge(svgLinks)
+        }
+
+        const dragLine = svg.append('line')
+            .attr('class', 'dragline hidden')
+            .attr('x1', 0)
+            .attr('y1', 0)
+            .attr('x2', 0)
+            .attr('y2', 0)
+
+        let dragStartNode: null | Node = null
+
+        const simulation = d3.forceSimulation(nodes)
+            .force('charge', d3.forceManyBody().strength(-500))
+            .force('x', d3.forceX(width / 2))
+            .force('y', d3.forceY(height / 2))
+            .on('tick', () => tick())
+
+        function updateLinks(links: Link[]) {
+            updateSvgLinks(links)
+            simulation.force('link', d3.forceLink(links).distance(150))
+            simulation.alpha(1).restart()
+        }
+
+        updateLinks(links)
 
         let svgGroups: Selection<any, Node, SVGSVGElement, unknown>
 
@@ -70,6 +117,29 @@ class GraphEditor extends React.Component {
                 .attr('r', 20)
                 .style('fill', (node: Node) => d3.rgb(colors(String(node.color))).brighter().toString())
                 .style('stroke', (node: Node) => d3.rgb(colors(String(node.color))).darker().toString())
+                .on('mousedown', (event: Event, node: Node) => {
+                    dragStartNode = node
+
+                    dragLine
+                        .classed('hidden', false)
+                        .attr('x1', node.x)
+                        .attr('y1', node.y)
+                        .attr('x2', node.x)
+                        .attr('y2', node.y)
+                })
+                .on('mouseup', (event: Event, node: Node) => {
+                    if (dragStartNode === null || dragStartNode === node) {
+                        return
+                    }
+
+                    const sameLinks = links.filter((link: Link) =>
+                        link.source === dragStartNode && link.target === node)
+
+                    if (sameLinks.length === 0) {
+                        links.push({source: dragStartNode, target: node})
+                        updateLinks(links)
+                    }
+                })
 
             newSvgGroups.append('text')
                 .text((node: Node) => node.name)
@@ -78,13 +148,6 @@ class GraphEditor extends React.Component {
         }
 
         updateSvgNodes(nodes)
-
-        const simulation = d3.forceSimulation(nodes)
-            .force('link', d3.forceLink(links).distance(150))
-            .force('charge', d3.forceManyBody().strength(-500))
-            .force('x', d3.forceX(width / 2))
-            .force('y', d3.forceY(height / 2))
-            .on('tick', () => tick())
 
         simulation.restart()
 
@@ -100,7 +163,11 @@ class GraphEditor extends React.Component {
         }
 
         function spawn(event: Event) {
-            const [x, y] = d3.pointer(event)
+            if (dragStartNode !== null) {
+                return
+            }
+
+            const [x, y] = d3.pointer(event);
             const node = {name: 'X', color: 5, x, y}
             nodes.push(node)
 
