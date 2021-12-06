@@ -68,10 +68,11 @@ class GraphEditor extends React.Component {
                 dragStartNode = null
             })
 
-        let svgLinks: Selection<any, Link, SVGSVGElement, unknown>
+        let svgLinks: Selection<any, Link, any, unknown>
+        const svgLinksGroup = svg.append('g')
 
         function updateSvgLinks(links: Link[]): void {
-            svgLinks = svg.selectAll('.link').data(links)
+            svgLinks = svgLinksGroup.selectAll('.link').data(links)
 
             const newSvgLink = svgLinks
                 .enter().append('line')
@@ -103,12 +104,13 @@ class GraphEditor extends React.Component {
 
         updateLinks(links)
 
-        let svgGroups: Selection<any, Node, SVGSVGElement, unknown>
+        let svgGroups: Selection<any, Node, any, unknown>
+        const svgGroupsGroup = svg.append('g')
 
         function updateSvgNodes(nodes: Node[]): void {
-            svgGroups = svg.selectAll('g').data(nodes)
+            svgGroups = svgGroupsGroup.selectAll('g').data(nodes)
 
-            let newSvgGroups = svg.selectAll('g')
+            let newSvgGroups = svgGroupsGroup.selectAll('g')
                 .data(nodes)
                 .enter().append('g')
 
