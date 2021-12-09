@@ -1,5 +1,5 @@
 {
-  "name": "ford-fulkerson-algorithm",
+  "name": "ford-fulkerson-algorithm-app",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
