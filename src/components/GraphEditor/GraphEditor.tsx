@@ -19,6 +19,17 @@ class GraphEditor extends React.Component {
 
     divRef: RefObject<HTMLDivElement>
 
+    nodes: Node[] = [
+        {name: 'A', color: 0, x: 100, y: 100},
+        {name: 'B', color: 1, x: 150, y: 200},
+        {name: 'C', color: 2, x: 500, y: 300}
+    ]
+
+    links: Link[] = [
+        {source: this.nodes[0], target: this.nodes[1]},
+        {source: this.nodes[1], target: this.nodes[2]}
+    ]
+
     svgLinks!: Selection<any, Link, any, unknown>
     svgGroups!: Selection<any, Node, any, unknown>
 
@@ -32,18 +43,22 @@ class GraphEditor extends React.Component {
         const width = 960
         const height = 500
 
-        const nodes = [
-            {name: 'A', color: 0, x: 100, y: 100},
-            {name: 'B', color: 1, x: 150, y: 200},
-            {name: 'C', color: 2, x: 500, y: 300}
-        ]
-
-        const links = [
-            {source: nodes[0], target: nodes[1]},
-            {source: nodes[1], target: nodes[2]}
-        ]
-
         const colors = d3.scaleOrdinal(d3.schemeCategory10)
+
+        const spawn = (event: Event) => {
+            if (dragStartNode !== null) {
+                return
+            }
+
+            const [x, y] = d3.pointer(event);
+            const node = {name: 'X', color: 5, x, y}
+            this.nodes.push(node)
+
+            simulation.nodes(this.nodes)
+            updateSvgNodes(this.nodes)
+
+            simulation.alpha(1).restart()
+        }
 
         const svg = d3.select(this.divRef.current)
             .append('svg')
@@ -92,7 +107,7 @@ class GraphEditor extends React.Component {
 
         let dragStartNode: null | Node = null
 
-        const simulation = d3.forceSimulation(nodes)
+        const simulation = d3.forceSimulation(this.nodes)
             .force('charge', d3.forceManyBody().strength(-500))
             .force('x', d3.forceX(width / 2))
             .force('y', d3.forceY(height / 2))
@@ -104,7 +119,7 @@ class GraphEditor extends React.Component {
             simulation.alpha(1).restart()
         }
 
-        updateLinks(links)
+        updateLinks(this.links)
 
         const svgGroupsGroup = svg.append('g')
 
@@ -135,12 +150,12 @@ class GraphEditor extends React.Component {
                         return
                     }
 
-                    const sameLinks = links.filter((link: Link) =>
+                    const sameLinks = this.links.filter((link: Link) =>
                         link.source === dragStartNode && link.target === node)
 
                     if (sameLinks.length === 0) {
-                        links.push({source: dragStartNode, target: node})
-                        updateLinks(links)
+                        this.links.push({source: dragStartNode, target: node})
+                        updateLinks(this.links)
                     }
                 })
 
@@ -150,24 +165,9 @@ class GraphEditor extends React.Component {
             this.svgGroups = newSvgGroups.merge(this.svgGroups)
         }
 
-        updateSvgNodes(nodes)
+        updateSvgNodes(this.nodes)
 
         simulation.restart()
-
-        function spawn(event: Event) {
-            if (dragStartNode !== null) {
-                return
-            }
-
-            const [x, y] = d3.pointer(event);
-            const node = {name: 'X', color: 5, x, y}
-            nodes.push(node)
-
-            simulation.nodes(nodes)
-            updateSvgNodes(nodes)
-
-            simulation.alpha(1).restart()
-        }
     }
 
     tick(): void {
