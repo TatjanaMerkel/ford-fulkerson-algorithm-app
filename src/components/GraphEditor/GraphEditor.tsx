@@ -1,7 +1,7 @@
 import './GraphEditor.css'
 import * as d3 from 'd3'
 import React, {RefObject} from 'react'
-import {Selection} from 'd3'
+import {Selection, Simulation} from 'd3'
 
 interface Node {
     name: string
@@ -33,6 +33,19 @@ class GraphEditor extends React.Component {
     svgLinks!: Selection<any, Link, any, unknown>
     svgGroups!: Selection<any, Node, any, unknown>
 
+    dragStartNode: null | Node = null
+
+    simulation!: Simulation<any, any>
+
+    width = 960
+    height = 500
+
+    svgGroupsGroup!: Selection<SVGGElement, unknown, null, undefined>
+    svgLinksGroup!: Selection<SVGGElement, unknown, null, undefined>
+    svgDragLine!: Selection<SVGLineElement, unknown, null, undefined>
+
+    colors = d3.scaleOrdinal(d3.schemeCategory10)
+
     constructor(props: any) {
         super(props)
 
@@ -40,134 +53,127 @@ class GraphEditor extends React.Component {
     }
 
     componentDidMount() {
-        const width = 960
-        const height = 500
-
-        const colors = d3.scaleOrdinal(d3.schemeCategory10)
-
-        const spawn = (event: Event) => {
-            if (dragStartNode !== null) {
-                return
-            }
-
-            const [x, y] = d3.pointer(event);
-            const node = {name: 'X', color: 5, x, y}
-            this.nodes.push(node)
-
-            simulation.nodes(this.nodes)
-            updateSvgNodes(this.nodes)
-
-            simulation.alpha(1).restart()
-        }
-
         const svg = d3.select(this.divRef.current)
             .append('svg')
-            .attr('width', width)
-            .attr('height', height)
+            .attr('width', this.width)
+            .attr('height', this.height)
             .on('contextmenu', (event: Event) => {
                 event.preventDefault()
             })
-            .on('mousedown', spawn)
+            .on('mousedown', (event: Event) => this.spawn(event))
             .on('mousemove', (event: Event) => {
-                if (dragStartNode === null) {
+                if (this.dragStartNode === null) {
                     return
                 }
 
                 const [x, y] = d3.pointer(event)
 
-                dragLine
-                    .attr('x1', dragStartNode.x)
-                    .attr('y1', dragStartNode.y)
+                this.svgDragLine
+                    .attr('x1', this.dragStartNode.x)
+                    .attr('y1', this.dragStartNode.y)
                     .attr('x2', x)
                     .attr('y2', y)
             })
             .on('mouseup', () => {
-                dragLine.classed('hidden', true)
-                dragStartNode = null
+                this.svgDragLine.classed('hidden', true)
+                this.dragStartNode = null
             })
 
-        const svgLinksGroup = svg.append('g')
+        this.simulation = d3.forceSimulation(this.nodes)
+            .force('charge', d3.forceManyBody().strength(-500))
+            .force('x', d3.forceX(this.width / 2))
+            .force('y', d3.forceY(this.height / 2))
+            .on('tick', () => this.tick())
 
-        const updateSvgLinks = (links: Link[]): void => {
-            this.svgLinks = svgLinksGroup.selectAll('.link').data(links)
+        this.svgLinksGroup = svg.append('g')
 
-            const newSvgLink = this.svgLinks
-                .enter().append('line')
-                .classed('link', true)
-
-            this.svgLinks = newSvgLink.merge(this.svgLinks)
-        }
-
-        const dragLine = svg.append('line')
+        this.svgDragLine = svg.append('line')
             .attr('class', 'dragline hidden')
             .attr('x1', 0)
             .attr('y1', 0)
             .attr('x2', 0)
             .attr('y2', 0)
 
-        let dragStartNode: null | Node = null
+        this.updateLinks(this.links)
 
-        const simulation = d3.forceSimulation(this.nodes)
-            .force('charge', d3.forceManyBody().strength(-500))
-            .force('x', d3.forceX(width / 2))
-            .force('y', d3.forceY(height / 2))
-            .on('tick', () => this.tick())
+        this.svgGroupsGroup = svg.append('g')
 
-        function updateLinks(links: Link[]) {
-            updateSvgLinks(links)
-            simulation.force('link', d3.forceLink(links).distance(150))
-            simulation.alpha(1).restart()
+        this.updateSvgNodes(this.nodes)
+
+        this.simulation.restart()
+    }
+
+    updateLinks(links: Link[]) {
+        this.updateSvgLinks(links)
+        this.simulation.force('link', d3.forceLink(links).distance(150))
+        this.simulation.alpha(1).restart()
+    }
+
+    updateSvgLinks(links: Link[]): void {
+        this.svgLinks = this.svgLinksGroup.selectAll('.link').data(links)
+
+        const newSvgLink = this.svgLinks
+            .enter().append('line')
+            .classed('link', true)
+
+        this.svgLinks = newSvgLink.merge(this.svgLinks)
+    }
+
+    updateSvgNodes(nodes: Node[]): void {
+        this.svgGroups = this.svgGroupsGroup.selectAll('g').data(nodes)
+
+        let newSvgGroups = this.svgGroupsGroup.selectAll('g')
+            .data(nodes)
+            .enter().append('g')
+
+        newSvgGroups.append('circle')
+            .classed('node', true)
+            .attr('r', 20)
+            .style('fill', (node: Node) => d3.rgb(this.colors(String(node.color))).brighter().toString())
+            .style('stroke', (node: Node) => d3.rgb(this.colors(String(node.color))).darker().toString())
+            .on('mousedown', (event: Event, node: Node) => {
+                this.dragStartNode = node
+
+                this.svgDragLine
+                    .classed('hidden', false)
+                    .attr('x1', node.x)
+                    .attr('y1', node.y)
+                    .attr('x2', node.x)
+                    .attr('y2', node.y)
+            })
+            .on('mouseup', (event: Event, node: Node) => {
+                if (this.dragStartNode === null || this.dragStartNode === node) {
+                    return
+                }
+
+                const sameLinks = this.links.filter((link: Link) =>
+                    link.source === this.dragStartNode && link.target === node)
+
+                if (sameLinks.length === 0) {
+                    this.links.push({source: this.dragStartNode, target: node})
+                    this.updateLinks(this.links)
+                }
+            })
+
+        newSvgGroups.append('text')
+            .text((node: Node) => node.name)
+
+        this.svgGroups = newSvgGroups.merge(this.svgGroups)
+    }
+
+    spawn(event: Event): void {
+        if (this.dragStartNode !== null) {
+            return
         }
 
-        updateLinks(this.links)
+        const [x, y] = d3.pointer(event);
+        const node = {name: 'X', color: 5, x, y}
+        this.nodes.push(node)
 
-        const svgGroupsGroup = svg.append('g')
+        this.simulation.nodes(this.nodes)
+        this.updateSvgNodes(this.nodes)
 
-        const updateSvgNodes = (nodes: Node[]): void => {
-            this.svgGroups = svgGroupsGroup.selectAll('g').data(nodes)
-
-            let newSvgGroups = svgGroupsGroup.selectAll('g')
-                .data(nodes)
-                .enter().append('g')
-
-            newSvgGroups.append('circle')
-                .classed('node', true)
-                .attr('r', 20)
-                .style('fill', (node: Node) => d3.rgb(colors(String(node.color))).brighter().toString())
-                .style('stroke', (node: Node) => d3.rgb(colors(String(node.color))).darker().toString())
-                .on('mousedown', (event: Event, node: Node) => {
-                    dragStartNode = node
-
-                    dragLine
-                        .classed('hidden', false)
-                        .attr('x1', node.x)
-                        .attr('y1', node.y)
-                        .attr('x2', node.x)
-                        .attr('y2', node.y)
-                })
-                .on('mouseup', (event: Event, node: Node) => {
-                    if (dragStartNode === null || dragStartNode === node) {
-                        return
-                    }
-
-                    const sameLinks = this.links.filter((link: Link) =>
-                        link.source === dragStartNode && link.target === node)
-
-                    if (sameLinks.length === 0) {
-                        this.links.push({source: dragStartNode, target: node})
-                        updateLinks(this.links)
-                    }
-                })
-
-            newSvgGroups.append('text')
-                .text((node: Node) => node.name)
-
-            this.svgGroups = newSvgGroups.merge(this.svgGroups)
-        }
-
-        updateSvgNodes(this.nodes)
-
-        simulation.restart()
+        this.simulation.alpha(1).restart()
     }
 
     tick(): void {
