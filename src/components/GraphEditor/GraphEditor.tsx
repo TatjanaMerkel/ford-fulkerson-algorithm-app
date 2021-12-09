@@ -19,6 +19,9 @@ class GraphEditor extends React.Component {
 
     divRef: RefObject<HTMLDivElement>
 
+    svgLinks!: Selection<any, Link, any, unknown>
+    svgGroups!: Selection<any, Node, any, unknown>
+
     constructor(props: any) {
         super(props)
 
@@ -68,17 +71,16 @@ class GraphEditor extends React.Component {
                 dragStartNode = null
             })
 
-        let svgLinks: Selection<any, Link, any, unknown>
         const svgLinksGroup = svg.append('g')
 
-        function updateSvgLinks(links: Link[]): void {
-            svgLinks = svgLinksGroup.selectAll('.link').data(links)
+        const updateSvgLinks = (links: Link[]): void => {
+            this.svgLinks = svgLinksGroup.selectAll('.link').data(links)
 
-            const newSvgLink = svgLinks
+            const newSvgLink = this.svgLinks
                 .enter().append('line')
                 .classed('link', true)
 
-            svgLinks = newSvgLink.merge(svgLinks)
+            this.svgLinks = newSvgLink.merge(this.svgLinks)
         }
 
         const dragLine = svg.append('line')
@@ -94,7 +96,7 @@ class GraphEditor extends React.Component {
             .force('charge', d3.forceManyBody().strength(-500))
             .force('x', d3.forceX(width / 2))
             .force('y', d3.forceY(height / 2))
-            .on('tick', () => tick())
+            .on('tick', () => this.tick())
 
         function updateLinks(links: Link[]) {
             updateSvgLinks(links)
@@ -104,11 +106,10 @@ class GraphEditor extends React.Component {
 
         updateLinks(links)
 
-        let svgGroups: Selection<any, Node, any, unknown>
         const svgGroupsGroup = svg.append('g')
 
-        function updateSvgNodes(nodes: Node[]): void {
-            svgGroups = svgGroupsGroup.selectAll('g').data(nodes)
+        const updateSvgNodes = (nodes: Node[]): void => {
+            this.svgGroups = svgGroupsGroup.selectAll('g').data(nodes)
 
             let newSvgGroups = svgGroupsGroup.selectAll('g')
                 .data(nodes)
@@ -146,23 +147,12 @@ class GraphEditor extends React.Component {
             newSvgGroups.append('text')
                 .text((node: Node) => node.name)
 
-            svgGroups = newSvgGroups.merge(svgGroups)
+            this.svgGroups = newSvgGroups.merge(this.svgGroups)
         }
 
         updateSvgNodes(nodes)
 
         simulation.restart()
-
-        function tick() {
-            svgLinks
-                .attr('x1', (link: Link) => link.source.x)
-                .attr('y1', (link: Link) => link.source.y)
-                .attr('x2', (link: Link) => link.target.x)
-                .attr('y2', (link: Link) => link.target.y)
-
-            svgGroups
-                .attr('transform', (node: Node) => `translate(${node.x},${node.y})`)
-        }
 
         function spawn(event: Event) {
             if (dragStartNode !== null) {
@@ -178,6 +168,17 @@ class GraphEditor extends React.Component {
 
             simulation.alpha(1).restart()
         }
+    }
+
+    tick(): void {
+        this.svgLinks
+            .attr('x1', (link: Link) => link.source.x)
+            .attr('y1', (link: Link) => link.source.y)
+            .attr('x2', (link: Link) => link.target.x)
+            .attr('y2', (link: Link) => link.target.y)
+
+        this.svgGroups
+            .attr('transform', (node: Node) => `translate(${node.x},${node.y})`)
     }
 
     render() {
