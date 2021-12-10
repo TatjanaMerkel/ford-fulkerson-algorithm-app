@@ -13,11 +13,11 @@ svg {
 
 .link, .dragline {
     stroke: black;
-    stroke-width: 4px;
+    stroke-width: 3px;
     cursor: default;
 }
 
-text {
+.node-group text {
     text-anchor: middle;
     dominant-baseline: middle;
     font-weight: bold;

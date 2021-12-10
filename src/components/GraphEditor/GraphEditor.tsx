@@ -13,6 +13,7 @@ interface Node {
 interface Link {
     source: Node
     target: Node
+    capacity: number
 }
 
 class GraphEditor extends React.Component {
@@ -32,8 +33,8 @@ class GraphEditor extends React.Component {
     nextNodeColor = 3
 
     links: Link[] = [
-        {source: this.nodes[0], target: this.nodes[1]},
-        {source: this.nodes[1], target: this.nodes[2]}
+        {source: this.nodes[0], target: this.nodes[1], capacity: 6},
+        {source: this.nodes[1], target: this.nodes[2], capacity: 9}
     ]
 
     simulation!: Simulation<any, any>
@@ -109,6 +110,7 @@ class GraphEditor extends React.Component {
         let newSvgNodeGroups = this.svgNodeGroupsGroup.selectAll('g')
             .data(nodes)
             .enter().append('g')
+            .classed('node-group', true)
 
         newSvgNodeGroups.append('circle')
             .classed('node', true)
@@ -147,8 +149,8 @@ class GraphEditor extends React.Component {
             .attr('xlink:href', (link: Link) => `#${link.source.name}${link.target.name}`)
             .attr('startOffset', '50%')
             .append('tspan')
-            .attr('dy', -5)
-            .text('taejbi')
+            .attr('dy', -10)
+            .text((link: Link) => `0 / ${link.capacity}`)
 
         this.svgLinkGroups = newSvgLinkGroups.merge(this.svgLinkGroups)
     }
@@ -194,7 +196,7 @@ class GraphEditor extends React.Component {
             link.source === this.dragStartNode && link.target === node)
 
         if (sameLinks.length === 0) {
-            this.links.push({source: this.dragStartNode, target: node})
+            this.links.push({source: this.dragStartNode, target: node, capacity: 0})
             this.updateLinks(this.links)
         }
     }
