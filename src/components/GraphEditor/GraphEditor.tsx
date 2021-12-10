@@ -38,12 +38,13 @@ class GraphEditor extends React.Component {
 
     simulation!: Simulation<any, any>
 
-    svgLinks!: Selection<any, Link, any, unknown>
-    svgGroups!: Selection<any, Node, any, unknown>
-    dragStartNode: null | Node = null
+    svgNodeGroupsGroup!: Selection<SVGGElement, unknown, null, undefined>
+    svgLinkGroupsGroup!: Selection<SVGGElement, unknown, null, undefined>
 
-    svgGroupsGroup!: Selection<SVGGElement, unknown, null, undefined>
-    svgLinksGroup!: Selection<SVGGElement, unknown, null, undefined>
+    svgNodeGroups!: Selection<any, Node, any, unknown>
+    svgLinkGroups!: Selection<any, Link, any, unknown>
+
+    dragStartNode: null | Node = null
     svgDragLine!: Selection<SVGLineElement, unknown, null, undefined>
 
     colors = d3.scaleOrdinal(d3.schemeCategory10)
@@ -91,10 +92,10 @@ class GraphEditor extends React.Component {
             .attr('x2', 0)
             .attr('y2', 0)
 
-        this.svgLinksGroup = svg.append('g')
+        this.svgLinkGroupsGroup = svg.append('g')
         this.updateLinks(this.links)
 
-        this.svgGroupsGroup = svg.append('g')
+        this.svgNodeGroupsGroup = svg.append('g')
         this.updateSvgNodes(this.nodes)
 
         this.simulation.restart()
@@ -103,13 +104,13 @@ class GraphEditor extends React.Component {
     /// Update nodes and links
 
     private updateSvgNodes(nodes: Node[]): void {
-        this.svgGroups = this.svgGroupsGroup.selectAll('g').data(nodes)
+        this.svgNodeGroups = this.svgNodeGroupsGroup.selectAll('g').data(nodes)
 
-        let newSvgGroups = this.svgGroupsGroup.selectAll('g')
+        let newSvgNodeGroups = this.svgNodeGroupsGroup.selectAll('g')
             .data(nodes)
             .enter().append('g')
 
-        newSvgGroups.append('circle')
+        newSvgNodeGroups.append('circle')
             .classed('node', true)
             .attr('r', 20)
             .style('fill', (node: Node) => d3.rgb(this.colors(String(node.color))).brighter().toString())
@@ -117,10 +118,10 @@ class GraphEditor extends React.Component {
             .on('mousedown', (event: Event, node: Node) => this.startDragLine(node))
             .on('mouseup', (event: Event, node: Node) => this.completeDragLine(node))
 
-        newSvgGroups.append('text')
+        newSvgNodeGroups.append('text')
             .text((node: Node) => node.name)
 
-        this.svgGroups = newSvgGroups.merge(this.svgGroups)
+        this.svgNodeGroups = newSvgNodeGroups.merge(this.svgNodeGroups)
     }
 
     private updateLinks(links: Link[]) {
@@ -130,14 +131,26 @@ class GraphEditor extends React.Component {
     }
 
     private updateSvgLinks(links: Link[]): void {
-        this.svgLinks = this.svgLinksGroup.selectAll('.link').data(links)
+        this.svgLinkGroups = this.svgLinkGroupsGroup.selectAll('g').data(links)
 
-        const newSvgLink = this.svgLinks
-            .enter().append('line')
+        let newSvgLinkGroups = this.svgLinkGroupsGroup.selectAll('g')
+            .data(links)
+            .enter().append('g')
+
+        newSvgLinkGroups.append('path')
+            .attr('id', (link: Link) => `${link.source.name}${link.target.name}`)
             .classed('link', true)
             .style('marker-end', 'url(#end-arrow)')
 
-        this.svgLinks = newSvgLink.merge(this.svgLinks)
+        newSvgLinkGroups.append('text')
+            .append('textPath')
+            .attr('xlink:href', (link: Link) => `#${link.source.name}${link.target.name}`)
+            .attr('startOffset', '50%')
+            .append('tspan')
+            .attr('dy', -5)
+            .text('taejbi')
+
+        this.svgLinkGroups = newSvgLinkGroups.merge(this.svgLinkGroups)
     }
 
     /// DragLine methods
@@ -213,22 +226,18 @@ class GraphEditor extends React.Component {
     /// Simulation.tick()
 
     private tick(): void {
-        this.svgLinks.each(function (link: Link) {
-
+        const links: Selection<any, any, any, any> = this.svgLinkGroups.selectAll('.link')
+        links.attr('d', (link: Link) => {
             const deltaX = link.target.x - link.source.x
             const deltaY = link.target.y - link.source.y
             const dist = Math.sqrt(deltaX * deltaX + deltaY * deltaY)
             const targetX = link.target.x - deltaX * 25 / dist
             const targetY = link.target.y - deltaY * 25 / dist
 
-            d3.select(this)
-                .attr('x1', link.source.x)
-                .attr('y1', link.source.y)
-                .attr('x2', targetX)
-                .attr('y2', targetY)
+            return `M${link.source.x},${link.source.y}L${targetX},${targetY}`
         })
 
-        this.svgGroups
+        this.svgNodeGroups
             .attr('transform', (node: Node) => `translate(${node.x},${node.y})`)
     }
 
