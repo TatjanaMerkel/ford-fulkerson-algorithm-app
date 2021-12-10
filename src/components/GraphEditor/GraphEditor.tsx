@@ -29,6 +29,8 @@ class GraphEditor extends React.Component {
         {name: 'C', color: 2, x: 500, y: 300}
     ]
 
+    selectedNode: null | Node = null
+
     nextNodeName = 'D'
     nextNodeColor = 3
 
@@ -107,6 +109,13 @@ class GraphEditor extends React.Component {
     private updateSvgNodes(nodes: Node[]): void {
         this.svgNodeGroups = this.svgNodeGroupsGroup.selectAll('g').data(nodes)
 
+        this.svgNodeGroups.selectAll('circle')
+            .style('fill', (node: any) => {
+                return (node === this.selectedNode)
+                    ? d3.rgb(this.colors(String(node.color))).brighter().toString()
+                    : this.colors(String(node.color));
+            })
+
         let newSvgNodeGroups = this.svgNodeGroupsGroup.selectAll('g')
             .data(nodes)
             .enter().append('g')
@@ -115,10 +124,14 @@ class GraphEditor extends React.Component {
         newSvgNodeGroups.append('circle')
             .classed('node', true)
             .attr('r', 20)
-            .style('fill', (node: Node) => d3.rgb(this.colors(String(node.color))).brighter().toString())
+            .style('fill', (node: Node) => {
+                return (node === this.selectedNode)
+                    ? d3.rgb(this.colors(String(node.color))).brighter().toString()
+                    : this.colors(String(node.color));
+            })
             .style('stroke', (node: Node) => d3.rgb(this.colors(String(node.color))).darker().toString())
             .on('mousedown', (event: Event, node: Node) => this.startDragLine(node))
-            .on('mouseup', (event: Event, node: Node) => this.completeDragLine(node))
+            .on('mouseup', (event: Event, node: Node) => this.onCircleMouseUp(node))
 
         newSvgNodeGroups.append('text')
             .text((node: Node) => node.name)
@@ -187,6 +200,19 @@ class GraphEditor extends React.Component {
         this.dragStartNode = null
     }
 
+    private onCircleMouseUp(node: Node): void {
+        if (node === this.dragStartNode) {
+            this.toggleSelectedNode(node)
+        } else {
+            this.completeDragLine(node)
+        }
+    }
+
+    private toggleSelectedNode(node: Node): void {
+        this.selectedNode = (this.selectedNode === node) ? null : node
+        this.updateSvgNodes(this.nodes)
+    }
+
     private completeDragLine(node: Node) {
         if (this.dragStartNode === null || this.dragStartNode === node) {
             return
@@ -247,7 +273,9 @@ class GraphEditor extends React.Component {
 
     render() {
         return (
-            <div ref={this.divRef}/>
+            <div ref={this.divRef}>
+                <input/>
+            </div>
         )
     }
 }
