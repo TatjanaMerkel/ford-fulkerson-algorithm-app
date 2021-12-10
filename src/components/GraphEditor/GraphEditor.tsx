@@ -1,7 +1,7 @@
 import './GraphEditor.css'
 import * as d3 from 'd3'
-import React, {RefObject} from 'react'
 import {Selection, Simulation} from 'd3'
+import React, {RefObject} from 'react'
 
 interface Node {
     name: string
@@ -70,7 +70,21 @@ class GraphEditor extends React.Component {
             .force('y', d3.forceY(this.height / 2))
             .on('tick', () => this.tick())
 
+        // Define arrow markers for links
+        svg.append('defs')
+            .append('marker')
+            .attr('id', 'end-arrow')
+            .attr('viewBox', '0 -5 10 10')
+            .attr('refX', 6)
+            .attr('markerWidth', 3)
+            .attr('markerHeight', 3)
+            .attr('orient', 'auto')
+            .append('path')
+            .attr('d', 'M0,-5L10,0L0,5')
+            .attr('fill', '#000')
+
         this.svgDragLine = svg.append('line')
+            .style('marker-end', 'url(#end-arrow)')
             .attr('class', 'dragline hidden')
             .attr('x1', 0)
             .attr('y1', 0)
@@ -121,6 +135,7 @@ class GraphEditor extends React.Component {
         const newSvgLink = this.svgLinks
             .enter().append('line')
             .classed('link', true)
+            .style('marker-end', 'url(#end-arrow)')
 
         this.svgLinks = newSvgLink.merge(this.svgLinks)
     }
@@ -198,11 +213,20 @@ class GraphEditor extends React.Component {
     /// Simulation.tick()
 
     private tick(): void {
-        this.svgLinks
-            .attr('x1', (link: Link) => link.source.x)
-            .attr('y1', (link: Link) => link.source.y)
-            .attr('x2', (link: Link) => link.target.x)
-            .attr('y2', (link: Link) => link.target.y)
+        this.svgLinks.each(function (link: Link) {
+
+            const deltaX = link.target.x - link.source.x
+            const deltaY = link.target.y - link.source.y
+            const dist = Math.sqrt(deltaX * deltaX + deltaY * deltaY)
+            const targetX = link.target.x - deltaX * 25 / dist
+            const targetY = link.target.y - deltaY * 25 / dist
+
+            d3.select(this)
+                .attr('x1', link.source.x)
+                .attr('y1', link.source.y)
+                .attr('x2', targetX)
+                .attr('y2', targetY)
+        })
 
         this.svgGroups
             .attr('transform', (node: Node) => `translate(${node.x},${node.y})`)
