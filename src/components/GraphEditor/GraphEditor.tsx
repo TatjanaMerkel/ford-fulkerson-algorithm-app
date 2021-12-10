@@ -1,7 +1,7 @@
 import './GraphEditor.css'
 import * as d3 from 'd3'
 import {Selection, Simulation} from 'd3'
-import React, {RefObject} from 'react'
+import React, {ChangeEvent, RefObject} from 'react'
 
 interface Node {
     name: string
@@ -56,6 +56,8 @@ class GraphEditor extends React.Component {
         super(props)
 
         this.divRef = React.createRef()
+
+        this.setNodeName = this.setNodeName.bind(this)
     }
 
     componentDidMount() {
@@ -115,6 +117,9 @@ class GraphEditor extends React.Component {
                     ? d3.rgb(this.colors(String(node.color))).brighter().toString()
                     : this.colors(String(node.color));
             })
+
+        this.svgNodeGroups.selectAll('text')
+            .text((node: any) => node.name)
 
         let newSvgNodeGroups = this.svgNodeGroupsGroup.selectAll('g')
             .data(nodes)
@@ -269,12 +274,24 @@ class GraphEditor extends React.Component {
             .attr('transform', (node: Node) => `translate(${node.x},${node.y})`)
     }
 
+    /// <input> onChange()
+
+    private setNodeName(event: ChangeEvent<HTMLInputElement>): void {
+        const newName = event.target.value
+
+        if (this.selectedNode !== null) {
+            this.selectedNode.name = newName
+        }
+
+        this.updateSvgNodes(this.nodes)
+    }
+
     /// render()
 
     render() {
         return (
             <div ref={this.divRef}>
-                <input/>
+                <input onChange={this.setNodeName}/>
             </div>
         )
     }
