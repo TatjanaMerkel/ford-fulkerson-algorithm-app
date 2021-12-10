@@ -28,6 +28,9 @@ class GraphEditor extends React.Component {
         {name: 'C', color: 2, x: 500, y: 300}
     ]
 
+    nextNodeName = 'D'
+    nextNodeColor = 3
+
     links: Link[] = [
         {source: this.nodes[0], target: this.nodes[1]},
         {source: this.nodes[1], target: this.nodes[2]}
@@ -171,13 +174,20 @@ class GraphEditor extends React.Component {
     /// spawnNode()
 
     private spawnNode(event: Event): void {
+        if (this.nodes.length >= 26) {
+            return
+        }
+
         if (this.dragStartNode !== null) {
             return
         }
 
         const [x, y] = d3.pointer(event);
-        const node = {name: 'X', color: 5, x, y}
+        const node = {name: this.nextNodeName, color: this.nextNodeColor, x, y}
         this.nodes.push(node)
+
+        this.nextNodeName = String.fromCharCode(this.nextNodeName.charCodeAt(0) + 1)
+        this.nextNodeColor = (this.nextNodeColor + 1) % 10
 
         this.simulation.nodes(this.nodes)
         this.updateSvgNodes(this.nodes)
