@@ -16,7 +16,15 @@ interface Link {
     capacity: number
 }
 
-class GraphEditor extends React.Component {
+interface Props {
+}
+
+interface State {
+    selectedNode: Node | null
+    linkCapacity: number
+}
+
+class GraphEditor extends React.Component<Props, State> {
 
     width = 960
     height = 500
@@ -28,8 +36,6 @@ class GraphEditor extends React.Component {
         {name: 'B', color: 1, x: 150, y: 200},
         {name: 'C', color: 2, x: 500, y: 300}
     ]
-
-    selectedNode: null | Node = null
 
     nextNodeName = 'D'
     nextNodeColor = 3
@@ -55,9 +61,15 @@ class GraphEditor extends React.Component {
     constructor(props: any) {
         super(props)
 
+        this.state = {
+            selectedNode: null,
+            linkCapacity: 0
+        }
+
         this.divRef = React.createRef()
 
         this.setNodeName = this.setNodeName.bind(this)
+        this.setLinkCapacity = this.setLinkCapacity.bind(this)
     }
 
     componentDidMount() {
@@ -113,7 +125,7 @@ class GraphEditor extends React.Component {
 
         this.svgNodeGroups.selectAll('circle')
             .style('fill', (node: any) => {
-                return (node === this.selectedNode)
+                return (node === this.state.selectedNode)
                     ? d3.rgb(this.colors(String(node.color))).brighter().toString()
                     : this.colors(String(node.color));
             })
@@ -130,7 +142,7 @@ class GraphEditor extends React.Component {
             .classed('node', true)
             .attr('r', 20)
             .style('fill', (node: Node) => {
-                return (node === this.selectedNode)
+                return (node === this.state.selectedNode)
                     ? d3.rgb(this.colors(String(node.color))).brighter().toString()
                     : this.colors(String(node.color));
             })
@@ -214,7 +226,8 @@ class GraphEditor extends React.Component {
     }
 
     private toggleSelectedNode(node: Node): void {
-        this.selectedNode = (this.selectedNode === node) ? null : node
+        const selectedNode = (this.state.selectedNode === node) ? null : node
+        this.setState({selectedNode})
         this.updateSvgNodes(this.nodes)
     }
 
@@ -279,11 +292,19 @@ class GraphEditor extends React.Component {
     private setNodeName(event: ChangeEvent<HTMLInputElement>): void {
         const newName = event.target.value
 
-        if (this.selectedNode !== null) {
-            this.selectedNode.name = newName
+        const selectedNode = this.state.selectedNode
+
+        if (selectedNode !== null) {
+            selectedNode.name = newName
+            this.setState({selectedNode})
         }
 
         this.updateSvgNodes(this.nodes)
+    }
+
+    private setLinkCapacity(event: ChangeEvent<HTMLInputElement>): void {
+        const linkCapacity = Number(event.target.value)
+        this.setState({linkCapacity})
     }
 
     /// render()
@@ -291,7 +312,36 @@ class GraphEditor extends React.Component {
     render() {
         return (
             <div ref={this.divRef}>
-                <input onChange={this.setNodeName}/>
+                <table>
+                    <tbody>
+                    <tr>
+                        <td>
+                            <label htmlFor="nodeText">Node Name</label>
+                        </td>
+                        <td>
+                            <div className="space"/>
+                        </td>
+                        <td>
+                            <input id="nodeText"
+                                   disabled={this.state.selectedNode === null}
+                                   value={this.state.selectedNode ? this.state.selectedNode.name : ''}
+                                   onChange={this.setNodeName}/>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <label htmlFor="linkCapacity">Link Capacity</label>
+                        </td>
+                        <td>
+                            <div className="space"/>
+                        </td>
+                        <td>
+                            <input id="linkCapacity" type="number" min={0} onChange={this.setLinkCapacity}/>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+                <input />
             </div>
         )
     }

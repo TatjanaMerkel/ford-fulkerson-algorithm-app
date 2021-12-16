@@ -1,3 +1,11 @@
+table {
+    padding: 8px;
+}
+
+.space {
+    width: 8px;
+}
+
 svg {
     background-color: #649698;
     cursor: default;
