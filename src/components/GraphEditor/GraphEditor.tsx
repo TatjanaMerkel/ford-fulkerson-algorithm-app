@@ -21,7 +21,7 @@ interface Props {
 
 interface State {
     selectedNode: Node | null
-    linkCapacity: number
+    selectedLink: Link | null
 }
 
 class GraphEditor extends React.Component<Props, State> {
@@ -63,7 +63,7 @@ class GraphEditor extends React.Component<Props, State> {
 
         this.state = {
             selectedNode: null,
-            linkCapacity: 0
+            selectedLink: null
         }
 
         this.divRef = React.createRef()
@@ -165,6 +165,9 @@ class GraphEditor extends React.Component<Props, State> {
     private updateSvgLinks(links: Link[]): void {
         this.svgLinkGroups = this.svgLinkGroupsGroup.selectAll('g').data(links)
 
+        this.svgLinkGroups.selectAll('tspan')
+            .text((link: any) => `0 / ${link.capacity}`)
+
         let newSvgLinkGroups = this.svgLinkGroupsGroup.selectAll('g')
             .data(links)
             .enter().append('g')
@@ -173,6 +176,7 @@ class GraphEditor extends React.Component<Props, State> {
             .attr('id', (link: Link) => `${link.source.name}${link.target.name}`)
             .classed('link', true)
             .style('marker-end', 'url(#end-arrow)')
+            .on('mousedown', (event: Event, link: Link) => this.toggleSelectedLink(event, link))
 
         newSvgLinkGroups.append('text')
             .append('textPath')
@@ -226,9 +230,25 @@ class GraphEditor extends React.Component<Props, State> {
     }
 
     private toggleSelectedNode(node: Node): void {
+        this.setState({selectedLink: null})
+
+        // deselect potentially selected link
         const selectedNode = (this.state.selectedNode === node) ? null : node
+        
         this.setState({selectedNode})
         this.updateSvgNodes(this.nodes)
+    }
+
+    private toggleSelectedLink(event: Event, link: Link): void {
+        event.stopPropagation()
+
+        // deselect potentially selected node
+        this.setState({selectedNode: null})
+        this.updateSvgNodes(this.nodes)
+
+        const selectedLink = (this.state.selectedLink === link) ? null : link
+        this.setState({selectedLink})
+        this.updateSvgLinks(this.links)
     }
 
     private completeDragLine(node: Node) {
@@ -303,8 +323,14 @@ class GraphEditor extends React.Component<Props, State> {
     }
 
     private setLinkCapacity(event: ChangeEvent<HTMLInputElement>): void {
-        const linkCapacity = Number(event.target.value)
-        this.setState({linkCapacity})
+        const newLinkCapacity = Number(event.target.value)
+
+        const selectedLink = this.state.selectedLink!
+
+        selectedLink.capacity = newLinkCapacity
+        this.setState({selectedLink})
+
+        this.updateSvgLinks(this.links)
     }
 
     /// render()
@@ -323,6 +349,7 @@ class GraphEditor extends React.Component<Props, State> {
                         </td>
                         <td>
                             <input id="nodeText"
+                                   type="text"
                                    disabled={this.state.selectedNode === null}
                                    value={this.state.selectedNode ? this.state.selectedNode.name : ''}
                                    onChange={this.setNodeName}/>
@@ -336,12 +363,15 @@ class GraphEditor extends React.Component<Props, State> {
                             <div className="space"/>
                         </td>
                         <td>
-                            <input id="linkCapacity" type="number" min={0} onChange={this.setLinkCapacity}/>
+                            <input id="linkCapacity"
+                                   type="number" min={0}
+                                   disabled={this.state.selectedLink === null}
+                                   value={this.state.selectedLink ? this.state.selectedLink.capacity : ''}
+                                   onChange={this.setLinkCapacity}/>
                         </td>
                     </tr>
                     </tbody>
                 </table>
-                <input />
             </div>
         )
     }
