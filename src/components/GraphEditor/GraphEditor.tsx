@@ -234,7 +234,7 @@ class GraphEditor extends React.Component<Props, State> {
 
         // deselect potentially selected link
         const selectedNode = (this.state.selectedNode === node) ? null : node
-        
+
         this.setState({selectedNode})
         this.updateSvgNodes(this.nodes)
     }
