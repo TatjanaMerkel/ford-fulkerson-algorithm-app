@@ -12,11 +12,37 @@ interface ResidualLink {
     flow: number
 }
 
-function fordFulkerson(nodes: Node[], links: Link[]) {
-
+interface Flow {
+    maxFlow: number
+    nodes: Node[]
+    links: Link[]
 }
 
-function createResidualGraph(nodes: Node[], links: Link[]): Map<Node, ResidualLink[]> {
+interface LogEntry {
+    flow: Flow
+    residualGraph: ResidualGraph
+    path: Node[]
+}
+
+type ResidualGraph = Map<Node, ResidualLink[]>
+
+function fordFulkerson(nodes: Node[], links: Link[]) {
+
+    const resGraph = createResidualGraph(nodes, links)
+    const log: LogEntry[] = []
+
+    let path = findAugmentingPath(resGraph)
+    logState(resGraph, path, log)
+
+    while (path.length !== 0) {
+        augment(path, resGraph)
+
+        path = findAugmentingPath(resGraph)
+        logState(resGraph, path, log)
+    }
+}
+
+function createResidualGraph(nodes: Node[], links: Link[]): ResidualGraph {
     const resGraph = new Map<Node, ResidualLink[]>()
 
     for (const link of links) {
@@ -30,6 +56,19 @@ function createResidualGraph(nodes: Node[], links: Link[]): Map<Node, ResidualLi
     }
 
     return resGraph
+}
+
+function findAugmentingPath(residualGraph: ResidualGraph): Node[] {
+
+    return []
+}
+
+function augment(path: Node[], residualGraph: ResidualGraph): void {
+
+}
+
+function logState(residualGraph: ResidualGraph, path: Node[], log: LogEntry[]): void {
+
 }
 
 export {fordFulkerson}
