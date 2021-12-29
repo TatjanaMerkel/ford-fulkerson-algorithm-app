@@ -1,5 +1,4 @@
-interface Node {
-}
+type Node = number
 
 interface Link {
     source: Node
@@ -34,7 +33,7 @@ function fordFulkerson(nodes: Node[], links: Link[]) {
     let path = findAugmentingPath(resGraph)
     logState(resGraph, path, log)
 
-    while (path.length !== 0) {
+    while (path !== null) {
         augment(path, resGraph)
 
         path = findAugmentingPath(resGraph)
@@ -58,16 +57,53 @@ function createResidualGraph(nodes: Node[], links: Link[]): ResidualGraph {
     return resGraph
 }
 
-function findAugmentingPath(residualGraph: ResidualGraph): Node[] {
+const sourceNode = 0
+const sinkNode = 1
 
-    return []
+function findAugmentingPath(residualGraph: ResidualGraph): Node[] | null {
+    const visited = new Set<Node>()
+
+    return depthFirstSearch([sourceNode], visited, residualGraph)
+}
+
+function depthFirstSearch(path: Node[], visited: Set<Node>, residualGraph: ResidualGraph): Node[] | null {
+    const lastNode = path[path.length - 1]
+    visited.add(lastNode)
+
+    if (lastNode === sinkNode) {
+        return path
+    }
+
+    // residual links with flow > 0
+    const resLinks = residualGraph.get(lastNode)!.filter(resLink => resLink.flow > 0)
+
+    if (resLinks.length === 0) {
+        return null
+    }
+
+    for (const resLink of resLinks) {
+        const targetNode = resLink.target
+
+        if (!visited.has(targetNode)) {
+            const newPath = path.slice(0)
+            newPath.push(targetNode)
+
+            const resultPath = depthFirstSearch(newPath, visited, residualGraph)
+
+            if (resultPath !== null) {
+                return resultPath
+            }
+        }
+    }
+
+    return null
 }
 
 function augment(path: Node[], residualGraph: ResidualGraph): void {
 
 }
 
-function logState(residualGraph: ResidualGraph, path: Node[], log: LogEntry[]): void {
+function logState(residualGraph: ResidualGraph, path: Node[] | null, log: LogEntry[]): void {
 
 }
 
