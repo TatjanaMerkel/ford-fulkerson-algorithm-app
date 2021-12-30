@@ -4,6 +4,7 @@ interface Link {
     source: Node
     target: Node
     capacity: number
+    flow: number
 }
 
 interface ResidualLink {
@@ -11,14 +12,10 @@ interface ResidualLink {
     flow: number
 }
 
-interface Flow {
+interface LogEntry {
     maxFlow: number
     nodes: Node[]
     links: Link[]
-}
-
-interface LogEntry {
-    flow: Flow
     residualGraph: ResidualGraph
     path: Node[]
 }
@@ -120,15 +117,15 @@ function augment(path: Node[], residualGraph: ResidualGraph): void {
 
 function iteratePath(path: Node[],
                      residualGraph: ResidualGraph,
-                     todo: (sourceResLink: ResidualLink, targetResLink: ResidualLink) => void
+                     handler: (sourceResLink: ResidualLink, targetResLink: ResidualLink) => void
 ): void {
     let source = path[0]
 
-    for (let target of path.slice(1)) {
+    for (const target of path.slice(1)) {
         const sourceResLink = residualGraph.get(source)!.filter(resLink => resLink.target === target)[0]
         const targetResLink = residualGraph.get(target)!.filter(resLink => resLink.target === source)[0]
 
-        todo(sourceResLink, targetResLink)
+        handler(sourceResLink, targetResLink)
 
         source = target
     }
@@ -136,6 +133,17 @@ function iteratePath(path: Node[],
 
 function logState(residualGraph: ResidualGraph, path: Node[] | null, log: LogEntry[]): void {
 
+}
+
+function setLinkFlows(residualGraph: ResidualGraph, links: Link[]): void {
+    for (const link of links) {
+        const resLink = residualGraph.get(link.target)!.filter(resLink => resLink.target === link.source)[0]
+        link.flow = resLink.flow
+    }
+}
+
+function getTotalFlow(residualGraph: ResidualGraph): number {
+    return residualGraph.get(sinkNode)!.reduce((acc: number, next: ResidualLink) => acc + next.flow, 0)
 }
 
 export {fordFulkerson}
