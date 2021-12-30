@@ -337,7 +337,7 @@ class GraphEditor extends React.Component<Props, State> {
 
     render() {
         return (
-            <div ref={this.divRef}>
+            <div id="graph-editor">
                 <table>
                     <tbody>
                     <tr>
@@ -372,6 +372,10 @@ class GraphEditor extends React.Component<Props, State> {
                     </tr>
                     </tbody>
                 </table>
+
+                <div ref={this.divRef}/>
+
+                <button>Solve</button>
             </div>
         )
     }

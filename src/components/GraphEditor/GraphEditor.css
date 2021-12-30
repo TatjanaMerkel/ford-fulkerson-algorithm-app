@@ -35,3 +35,12 @@ svg {
 .hidden {
     display: none;
 }
+
+#graph-editor {
+    margin: auto;
+    width: 960px;
+}
+
+button {
+    float: right;
+}
