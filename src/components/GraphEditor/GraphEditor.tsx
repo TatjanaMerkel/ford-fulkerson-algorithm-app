@@ -111,7 +111,7 @@ class GraphEditor extends React.Component<Props, State> {
 
         const logs = fordFulkerson(fulkersonNodes, fulkersonLinks)
 
-        console.log(logs)
+        console.log(logs[logs.length - 1].maxFlow)
     }
 
     /// componentDidMount()
@@ -344,11 +344,34 @@ class GraphEditor extends React.Component<Props, State> {
             const targetX = link.target.x - deltaX * 25 / dist
             const targetY = link.target.y - deltaY * 25 / dist
 
-            return `M${link.source.x},${link.source.y}L${targetX},${targetY}`
+            if (this.oppositeLinkExists(link)) {
+                const arcRadius = Math.sqrt(deltaX * deltaX + deltaY * deltaY)
+
+                const move = `M ${link.source.x} ${link.source.y}`
+                const arc = `A ${arcRadius} ${arcRadius} 0 0 1 ${targetX} ${targetY}`
+
+                return `${move} ${arc}`
+
+            } else {
+                const move = `M ${link.source.x} ${link.source.y}`
+                const line = `L ${targetX} ${targetY}`
+
+                return `${move} ${line}`
+            }
         })
 
         this.svgNodeGroups
             .attr('transform', (node: Node) => `translate(${node.x},${node.y})`)
+    }
+
+    private oppositeLinkExists(link: Link): boolean {
+        for (const l of this.links) {
+            if (l.source === link.target && l.target === link.source) {
+                return true
+            }
+        }
+
+        return false
     }
 
     /// render()

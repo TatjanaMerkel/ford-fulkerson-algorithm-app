@@ -22,6 +22,7 @@ svg {
 .link, .dragline {
     stroke: black;
     stroke-width: 5px;
+    fill: none;
     cursor: default;
 }
 
