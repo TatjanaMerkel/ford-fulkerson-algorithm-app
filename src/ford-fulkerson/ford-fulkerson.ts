@@ -127,6 +127,7 @@ function iteratePath(path: Node[],
 
     for (const target of path.slice(1)) {
         const sourceResLink = residualGraph.get(source)!.filter(resLink => resLink.target === target)[0]
+        // eslint-disable-next-line no-loop-func
         const targetResLink = residualGraph.get(target)!.filter(resLink => resLink.target === source)[0]
 
         handler(sourceResLink, targetResLink)

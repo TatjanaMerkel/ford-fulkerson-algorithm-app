@@ -42,8 +42,8 @@ class GraphEditor extends React.Component<Props, State> {
     nextNodeColor = 3
 
     links: Link[] = [
-        {source: this.nodes[0], target: this.nodes[1], capacity: 6},
-        {source: this.nodes[1], target: this.nodes[2], capacity: 9}
+        {source: this.nodes[0], target: this.nodes[2], capacity: 6},
+        {source: this.nodes[2], target: this.nodes[1], capacity: 9}
     ]
 
     simulation!: Simulation<any, any>
