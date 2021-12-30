@@ -17,7 +17,7 @@ interface LogEntry {
     nodes: Node[]
     links: Link[]
     residualGraph: ResidualGraph
-    path: Node[]
+    path: Node[] | null
 }
 
 type ResidualGraph = Map<Node, ResidualLink[]>
@@ -28,13 +28,13 @@ function fordFulkerson(nodes: Node[], links: Link[]) {
     const log: LogEntry[] = []
 
     let path = findAugmentingPath(resGraph)
-    logState(resGraph, path, log)
+    logState(resGraph, path, log, nodes, links)
 
     while (path !== null) {
         augment(path, resGraph)
 
         path = findAugmentingPath(resGraph)
-        logState(resGraph, path, log)
+        logState(resGraph, path, log, nodes, links)
     }
 }
 
@@ -131,10 +131,6 @@ function iteratePath(path: Node[],
     }
 }
 
-function logState(residualGraph: ResidualGraph, path: Node[] | null, log: LogEntry[]): void {
-
-}
-
 function setLinkFlows(residualGraph: ResidualGraph, links: Link[]): void {
     for (const link of links) {
         const resLink = residualGraph.get(link.target)!.filter(resLink => resLink.target === link.source)[0]
@@ -144,6 +140,28 @@ function setLinkFlows(residualGraph: ResidualGraph, links: Link[]): void {
 
 function getTotalFlow(residualGraph: ResidualGraph): number {
     return residualGraph.get(sinkNode)!.reduce((acc: number, next: ResidualLink) => acc + next.flow, 0)
+}
+
+function logState(
+    residualGraph: ResidualGraph,
+    path: Node[] | null,
+    logs: LogEntry[],
+    nodes: Node[],
+    links: Link[]
+): void {
+    setLinkFlows(residualGraph, links)
+
+    logs.push({
+        maxFlow: getTotalFlow(residualGraph),
+        nodes: nodes,
+        links: copy(links),
+        path: copy(path),
+        residualGraph: copy(residualGraph)
+    })
+}
+
+function copy<T>(obj: T): T {
+    return JSON.parse(JSON.stringify(obj))
 }
 
 export {fordFulkerson}
