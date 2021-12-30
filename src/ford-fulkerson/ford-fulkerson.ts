@@ -101,23 +101,37 @@ function depthFirstSearch(path: Node[], visited: Set<Node>, residualGraph: Resid
 
 function bottleneck(path: Node[], residualGraph: ResidualGraph): number {
     let minFlow = Infinity
-    let source = path[0]
 
-    for (let target of path.slice(1)) {
-        const resLink = residualGraph.get(source)!.filter(resLink => resLink.target === target)[0]
-
-        if (resLink.flow < minFlow) {
-            minFlow = resLink.flow
-        }
-
-        source = target
-    }
+    iteratePath(path, residualGraph, (sourceResLink) => {
+        minFlow = Math.min(minFlow, sourceResLink.flow)
+    })
 
     return minFlow
 }
 
 function augment(path: Node[], residualGraph: ResidualGraph): void {
+    const minFlow = bottleneck(path, residualGraph)
 
+    iteratePath(path, residualGraph, (sourceResLink, targetResLink) => {
+        sourceResLink.flow -= minFlow
+        targetResLink.flow += minFlow
+    })
+}
+
+function iteratePath(path: Node[],
+                     residualGraph: ResidualGraph,
+                     todo: (sourceResLink: ResidualLink, targetResLink: ResidualLink) => void
+): void {
+    let source = path[0]
+
+    for (let target of path.slice(1)) {
+        const sourceResLink = residualGraph.get(source)!.filter(resLink => resLink.target === target)[0]
+        const targetResLink = residualGraph.get(target)!.filter(resLink => resLink.target === source)[0]
+
+        todo(sourceResLink, targetResLink)
+
+        source = target
+    }
 }
 
 function logState(residualGraph: ResidualGraph, path: Node[] | null, log: LogEntry[]): void {
