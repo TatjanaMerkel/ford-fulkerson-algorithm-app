@@ -72,6 +72,34 @@ class GraphEditor extends React.Component<Props, State> {
         this.setLinkCapacity = this.setLinkCapacity.bind(this)
     }
 
+    /// Event handlers
+
+    private setNodeName(event: ChangeEvent<HTMLInputElement>): void {
+        const newName = event.target.value
+
+        const selectedNode = this.state.selectedNode
+
+        if (selectedNode !== null) {
+            selectedNode.name = newName
+            this.setState({selectedNode})
+        }
+
+        this.updateSvgNodes(this.nodes)
+    }
+
+    private setLinkCapacity(event: ChangeEvent<HTMLInputElement>): void {
+        const newLinkCapacity = Number(event.target.value)
+
+        const selectedLink = this.state.selectedLink!
+
+        selectedLink.capacity = newLinkCapacity
+        this.setState({selectedLink})
+
+        this.updateSvgLinks(this.links)
+    }
+
+    /// componentDidMount()
+
     componentDidMount() {
         const svg = d3.select(this.divRef.current)
             .append('svg')
@@ -305,32 +333,6 @@ class GraphEditor extends React.Component<Props, State> {
 
         this.svgNodeGroups
             .attr('transform', (node: Node) => `translate(${node.x},${node.y})`)
-    }
-
-    /// <input> onChange()
-
-    private setNodeName(event: ChangeEvent<HTMLInputElement>): void {
-        const newName = event.target.value
-
-        const selectedNode = this.state.selectedNode
-
-        if (selectedNode !== null) {
-            selectedNode.name = newName
-            this.setState({selectedNode})
-        }
-
-        this.updateSvgNodes(this.nodes)
-    }
-
-    private setLinkCapacity(event: ChangeEvent<HTMLInputElement>): void {
-        const newLinkCapacity = Number(event.target.value)
-
-        const selectedLink = this.state.selectedLink!
-
-        selectedLink.capacity = newLinkCapacity
-        this.setState({selectedLink})
-
-        this.updateSvgLinks(this.links)
     }
 
     /// render()
