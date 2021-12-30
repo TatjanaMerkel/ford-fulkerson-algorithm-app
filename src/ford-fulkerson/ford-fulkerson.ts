@@ -99,6 +99,23 @@ function depthFirstSearch(path: Node[], visited: Set<Node>, residualGraph: Resid
     return null
 }
 
+function bottleneck(path: Node[], residualGraph: ResidualGraph): number {
+    let minFlow = Infinity
+    let source = path[0]
+
+    for (let target of path.slice(1)) {
+        const resLink = residualGraph.get(source)!.filter(resLink => resLink.target === target)[0]
+
+        if (resLink.flow < minFlow) {
+            minFlow = resLink.flow
+        }
+
+        source = target
+    }
+
+    return minFlow
+}
+
 function augment(path: Node[], residualGraph: ResidualGraph): void {
 
 }
