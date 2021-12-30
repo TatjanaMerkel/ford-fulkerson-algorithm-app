@@ -2,6 +2,7 @@ import './GraphEditor.css'
 import * as d3 from 'd3'
 import {Selection, Simulation} from 'd3'
 import React, {ChangeEvent, RefObject} from 'react'
+import {fordFulkerson} from "../../ford-fulkerson/ford-fulkerson";
 
 interface Node {
     name: string
@@ -70,6 +71,7 @@ class GraphEditor extends React.Component<Props, State> {
 
         this.setNodeName = this.setNodeName.bind(this)
         this.setLinkCapacity = this.setLinkCapacity.bind(this)
+        this.solve = this.solve.bind(this)
     }
 
     /// Event handlers
@@ -96,6 +98,20 @@ class GraphEditor extends React.Component<Props, State> {
         this.setState({selectedLink})
 
         this.updateSvgLinks(this.links)
+    }
+
+    private solve(event: React.MouseEvent<HTMLButtonElement>): void {
+        const fulkersonNodes = this.nodes.map((value, index) => index)
+        const fulkersonLinks = this.links.map(link => ({
+            source: this.nodes.indexOf(link.source),
+            target: this.nodes.indexOf(link.target),
+            capacity: link.capacity,
+            flow: 0
+        }))
+
+        const logs = fordFulkerson(fulkersonNodes, fulkersonLinks)
+
+        console.log(logs)
     }
 
     /// componentDidMount()
@@ -377,7 +393,7 @@ class GraphEditor extends React.Component<Props, State> {
 
                 <div ref={this.divRef}/>
 
-                <button>Solve</button>
+                <button onClick={this.solve}>Solve</button>
             </div>
         )
     }

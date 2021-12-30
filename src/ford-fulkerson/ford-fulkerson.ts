@@ -22,7 +22,7 @@ interface LogEntry {
 
 type ResidualGraph = Map<Node, ResidualLink[]>
 
-function fordFulkerson(nodes: Node[], links: Link[]) {
+function fordFulkerson(nodes: Node[], links: Link[]): LogEntry[] {
 
     const resGraph = createResidualGraph(nodes, links)
     const log: LogEntry[] = []
@@ -36,6 +36,8 @@ function fordFulkerson(nodes: Node[], links: Link[]) {
         path = findAugmentingPath(resGraph)
         logState(resGraph, path, log, nodes, links)
     }
+
+    return log
 }
 
 function createResidualGraph(nodes: Node[], links: Link[]): ResidualGraph {
@@ -45,10 +47,12 @@ function createResidualGraph(nodes: Node[], links: Link[]): ResidualGraph {
         const sourceResLinks = resGraph.get(link.source) || []
         const sourceResLink = {target: link.target, flow: link.capacity}
         sourceResLinks.push(sourceResLink)
+        resGraph.set(link.source, sourceResLinks)
 
         const targetResLinks = resGraph.get(link.target) || []
         const targetResLink = {target: link.source, flow: 0}
         targetResLinks.push(targetResLink)
+        resGraph.set(link.target, targetResLinks)
     }
 
     return resGraph
