@@ -19,13 +19,19 @@ class Stepper extends React.Component<Props, State> {
     }
 
     render() {
-        return(
+        return (
             <div id="stepper" className="ui-widget ui-background flex">
-                <button>&lt;&lt;</button>
-                <button>&lt;</button>
+                <button onClick={() => this.setState({currentStep: 0})}>&lt;&lt;</button>
+                <button
+                    onClick={() => this.setState({currentStep: this.state.currentStep === 0 ? 0 : this.state.currentStep - 1})}>&lt;</button>
                 <span> {this.state.currentStep} / {this.props.maxSteps}</span>
-                <button>&gt;</button>
-                <button>&gt;&gt;</button>
+                <button
+                    onClick={() => this.setState(
+                        {
+                            currentStep: this.state.currentStep === this.props.maxSteps ?
+                                this.props.maxSteps : this.state.currentStep + 1
+                        })}>&gt;</button>
+                <button onClick={() => this.setState({currentStep: this.props.maxSteps})}>&gt;&gt;</button>
             </div>
         )
     }
