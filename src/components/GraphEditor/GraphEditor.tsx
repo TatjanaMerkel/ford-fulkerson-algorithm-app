@@ -377,7 +377,7 @@ class GraphEditor extends React.Component<Props, State> {
 
                 <div ref={this.divRef}/>
 
-                <button>Solve</button>
+                <button className="btn">Solve</button>
             </div>
         )
     }
