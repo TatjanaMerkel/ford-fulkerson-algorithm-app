@@ -3,6 +3,7 @@ import * as d3 from 'd3'
 import {Selection, Simulation} from 'd3'
 import React, {ChangeEvent, RefObject} from 'react'
 import {fordFulkerson} from '../../ford-fulkerson/ford-fulkerson'
+import Stepper from "../Stepper/Stepper";
 
 interface Node {
     name: string
@@ -433,13 +434,9 @@ class GraphEditor extends React.Component<Props, State> {
                     </tbody>
                 </table>
 
-                <div id="stepper" className="ui-widget ui-background flex">
-                    <button>&lt;&lt;</button>
-                    <button>&lt;</button>
-                    <span>2 / 7</span>
-                    <button>&gt;</button>
-                    <button>&gt;&gt;</button>
-                </div>
+                <Stepper maxSteps={7}/>
+
+
 
                 <div id="menu" className="ui-widget">
                     <button className="btn" onClick={this.solve}>Solve</button>
