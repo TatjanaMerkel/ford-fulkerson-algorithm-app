@@ -2,6 +2,7 @@ import './GraphEditor.css'
 import * as d3 from 'd3'
 import {Selection, Simulation} from 'd3'
 import React, {ChangeEvent, RefObject} from 'react'
+import {fordFulkerson} from "../../ford-fulkerson/ford-fulkerson";
 
 interface Node {
     name: string
@@ -14,6 +15,7 @@ interface Link {
     source: Node
     target: Node
     capacity: number
+    flow: number
 }
 
 interface Props {
@@ -41,8 +43,8 @@ class GraphEditor extends React.Component<Props, State> {
     nextNodeColor = 3
 
     links: Link[] = [
-        {source: this.nodes[0], target: this.nodes[1], capacity: 6},
-        {source: this.nodes[1], target: this.nodes[2], capacity: 9}
+        {source: this.nodes[0], target: this.nodes[2], capacity: 6, flow: 0},
+        {source: this.nodes[2], target: this.nodes[1], capacity: 9, flow: 0}
     ]
 
     simulation!: Simulation<any, any>
@@ -70,6 +72,7 @@ class GraphEditor extends React.Component<Props, State> {
 
         this.setNodeName = this.setNodeName.bind(this)
         this.setLinkCapacity = this.setLinkCapacity.bind(this)
+        this.solve = this.solve.bind(this)
     }
 
     /// Event handlers
@@ -98,6 +101,38 @@ class GraphEditor extends React.Component<Props, State> {
         this.updateSvgLinks(this.links)
     }
 
+    private solve(event: React.MouseEvent<HTMLButtonElement>): void {
+        const fulkersonNodes = this.nodes.map((value, index) => index)
+        const fulkersonLinks = this.links.map(link => ({
+            source: this.nodes.indexOf(link.source),
+            target: this.nodes.indexOf(link.target),
+            capacity: link.capacity,
+            flow: 0
+        }))
+
+        const logs = fordFulkerson(fulkersonNodes, fulkersonLinks)
+
+        console.log(logs[logs.length - 1].maxFlow)
+
+        const links = logs[logs.length - 1].links.map(link => ({
+            source: this.nodes[link.source],
+            target: this.nodes[link.target],
+            capacity: link.capacity,
+            flow: link.flow
+        }))
+
+        this.updateLinkFlows(links)
+    }
+
+    private updateLinkFlows(links: Link[]): void {
+        for (const link of links) {
+            const l = this.links.find(value => value.source === link.source && value.target === link.target)
+            l!.flow = link.flow
+        }
+
+        this.updateSvgLinks(this.links)
+    }
+
     /// componentDidMount()
 
     componentDidMount() {
@@ -111,7 +146,7 @@ class GraphEditor extends React.Component<Props, State> {
             .on('mouseup', () => this.cancelDragLine())
 
         this.simulation = d3.forceSimulation(this.nodes)
-            .force('charge', d3.forceManyBody().strength(-500))
+            .force('charge', d3.forceManyBody().strength(-1000))
             .force('x', d3.forceX(this.width / 2))
             .force('y', d3.forceY(this.height / 2))
             .on('tick', () => this.tick())
@@ -186,7 +221,7 @@ class GraphEditor extends React.Component<Props, State> {
 
     private updateLinks(links: Link[]) {
         this.updateSvgLinks(links)
-        this.simulation.force('link', d3.forceLink(links).distance(150))
+        this.simulation.force('link', d3.forceLink(links).distance(200))
         this.simulation.alpha(1).restart()
     }
 
@@ -194,7 +229,7 @@ class GraphEditor extends React.Component<Props, State> {
         this.svgLinkGroups = this.svgLinkGroupsGroup.selectAll('g').data(links)
 
         this.svgLinkGroups.selectAll('tspan')
-            .text((link: any) => `0 / ${link.capacity}`)
+            .text((link: any) => `${link.flow} / ${link.capacity}`)
 
         let newSvgLinkGroups = this.svgLinkGroupsGroup.selectAll('g')
             .data(links)
@@ -288,7 +323,7 @@ class GraphEditor extends React.Component<Props, State> {
             link.source === this.dragStartNode && link.target === node)
 
         if (sameLinks.length === 0) {
-            this.links.push({source: this.dragStartNode, target: node, capacity: 0})
+            this.links.push({source: this.dragStartNode, target: node, capacity: 0, flow: 0})
             this.updateLinks(this.links)
         }
     }
@@ -328,11 +363,34 @@ class GraphEditor extends React.Component<Props, State> {
             const targetX = link.target.x - deltaX * 25 / dist
             const targetY = link.target.y - deltaY * 25 / dist
 
-            return `M${link.source.x},${link.source.y}L${targetX},${targetY}`
+            if (this.oppositeLinkExists(link)) {
+                const arcRadius = Math.sqrt(deltaX * deltaX + deltaY * deltaY)
+
+                const move = `M ${link.source.x} ${link.source.y}`
+                const arc = `A ${arcRadius} ${arcRadius} 0 0 1 ${targetX} ${targetY}`
+
+                return `${move} ${arc}`
+
+            } else {
+                const move = `M ${link.source.x} ${link.source.y}`
+                const line = `L ${targetX} ${targetY}`
+
+                return `${move} ${line}`
+            }
         })
 
         this.svgNodeGroups
             .attr('transform', (node: Node) => `translate(${node.x},${node.y})`)
+    }
+
+    private oppositeLinkExists(link: Link): boolean {
+        for (const l of this.links) {
+            if (l.source === link.target && l.target === link.source) {
+                return true
+            }
+        }
+
+        return false
     }
 
     /// render()
@@ -377,7 +435,9 @@ class GraphEditor extends React.Component<Props, State> {
 
                 <div ref={this.divRef}/>
 
-                <button className="btn">Solve</button>
+
+                <button onClick={this.solve} className="btn">Solve</button>
+
             </div>
         )
     }
