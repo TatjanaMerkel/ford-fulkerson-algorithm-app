@@ -50,7 +50,9 @@ svg {
 
     margin: 8px;
     padding: 4px;
+}
 
+.ui-background {
     background-color: rgba(255, 255, 255, 0.5);
 }
 
@@ -74,3 +76,29 @@ table input {
     bottom: 0;
     right: 0;
 }
+
+/* BUTTON */
+.btn {
+    display: inline-block;
+    float: right;
+    background-color: #27ae60;
+    background-image: linear-gradient(180deg, rgba(255, 255, 255, .15), rgba(255, 255, 255, 0));
+    box-shadow: rgba(255, 255, 255, 0.15) 0 1px 0 inset, rgba(46, 54, 80, 0.075) 0 1px 1px;
+    color: #fff;
+    text-decoration: none;
+    font-size: 1rem;
+    font-weight: 400;
+    padding: 0.8rem 1.6rem;
+    border-radius: 9px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    border: none;
+}
+
+.btn:hover {
+    background-color: #1f8b4d;
+    /*border: 1px solid #ffffff;*/
+}
+
+
+

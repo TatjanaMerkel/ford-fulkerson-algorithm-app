@@ -394,11 +394,11 @@ class GraphEditor extends React.Component<Props, State> {
             <div id="graph-editor">
                 <svg ref={this.svg}/>
 
-                <div id="flow" className="ui-widget">
+                <div id="flow" className="ui-widget ui-background">
                     Flow: 0
                 </div>
 
-                <table className="ui-widget">
+                <table className="ui-widget ui-background">
                     <tbody>
                     <tr>
                         <td>
@@ -434,7 +434,7 @@ class GraphEditor extends React.Component<Props, State> {
                 </table>
 
                 <div id="menu" className="ui-widget">
-                    <button onClick={this.solve}>Solve</button>
+                    <button className="btn" onClick={this.solve}>Solve</button>
                 </div>
             </div>
         )
