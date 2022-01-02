@@ -2,8 +2,7 @@ import React from "react";
 
 
 interface Props {
-    maxSteps: number
-
+    maxStep: number
     onCurrentStepChange: (currentStep: number) => void
 }
 
@@ -27,7 +26,7 @@ class Stepper extends React.Component<Props, State> {
 
     render() {
         return (
-            <div id="stepper" className="ui-widget ui-background flex">
+            <div id="stepper" className="ui-widget ui-background flex" >
                 <button onClick={() => this.goToStep(0)}>
                     &lt;&lt;
                 </button>
@@ -37,14 +36,14 @@ class Stepper extends React.Component<Props, State> {
                 </button>
 
                 <span>
-                    {this.state.currentStep} / {this.props.maxSteps}
+                    {this.state.currentStep + 1} / {this.props.maxStep + 1}
                 </span>
 
-                <button onClick={() => this.goToStep(Math.min(this.props.maxSteps, this.state.currentStep + 1))}>
+                <button onClick={() => this.goToStep(Math.min(this.props.maxStep, this.state.currentStep + 1))}>
                     &gt;
                 </button>
 
-                <button onClick={() => this.goToStep(this.props.maxSteps)}>
+                <button onClick={() => this.goToStep(this.props.maxStep)}>
                     &gt;&gt;
                 </button>
             </div>

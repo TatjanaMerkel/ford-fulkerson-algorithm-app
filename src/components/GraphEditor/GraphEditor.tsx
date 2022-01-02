@@ -25,6 +25,12 @@ interface Props {
 interface State {
     selectedNode: Node | null
     selectedLink: Link | null
+    modus: Modus
+}
+
+enum Modus {
+    EDIT,
+    SOLUTION
 }
 
 class GraphEditor extends React.Component<Props, State> {
@@ -63,7 +69,8 @@ class GraphEditor extends React.Component<Props, State> {
 
         this.state = {
             selectedNode: null,
-            selectedLink: null
+            selectedLink: null,
+            modus: Modus.EDIT
         }
 
         this.svg = React.createRef()
@@ -71,6 +78,7 @@ class GraphEditor extends React.Component<Props, State> {
         this.setNodeName = this.setNodeName.bind(this)
         this.setLinkCapacity = this.setLinkCapacity.bind(this)
         this.solve = this.solve.bind(this)
+        this.edit = this.edit.bind(this)
     }
 
     /// Event handlers
@@ -108,6 +116,7 @@ class GraphEditor extends React.Component<Props, State> {
             flow: 0
         }))
 
+
         const logs = fordFulkerson(fulkersonNodes, fulkersonLinks)
 
         console.log(logs[logs.length - 1].maxFlow)
@@ -120,6 +129,11 @@ class GraphEditor extends React.Component<Props, State> {
         }))
 
         this.updateLinkFlows(links)
+        this.setState({modus: Modus.SOLUTION})
+    }
+
+    private edit(): void {
+        this.setState({modus: Modus.EDIT})
     }
 
     private updateLinkFlows(links: Link[]): void {
@@ -434,14 +448,20 @@ class GraphEditor extends React.Component<Props, State> {
                     </tbody>
                 </table>
 
-                <Stepper maxSteps={7}
-                         onCurrentStepChange={(currentStep: number) => console.log(currentStep)}/>
+                {this.state.modus === Modus.SOLUTION &&
 
-
+                    <Stepper maxStep={7}
+                             onCurrentStepChange={(currentStep: number) => console.log(currentStep)}/>
+                }
 
                 <div id="menu" className="ui-widget">
-                    <button className="btn" onClick={this.solve}>Solve</button>
+                    {this.state.modus === Modus.EDIT ?
+                        <button className="btn" onClick={this.solve}>Solve</button>
+                        :
+                        <button className="btn" onClick={this.edit}>Edit</button>
+                    }
                 </div>
+
             </div>
         )
     }
