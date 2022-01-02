@@ -433,6 +433,14 @@ class GraphEditor extends React.Component<Props, State> {
                     </tbody>
                 </table>
 
+                <div id="stepper" className="ui-widget ui-background flex">
+                    <button>&lt;&lt;</button>
+                    <button>&lt;</button>
+                    <span>2 / 7</span>
+                    <button>&gt;</button>
+                    <button>&gt;&gt;</button>
+                </div>
+
                 <div id="menu" className="ui-widget">
                     <button className="btn" onClick={this.solve}>Solve</button>
                 </div>
