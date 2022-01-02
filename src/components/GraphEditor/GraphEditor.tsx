@@ -434,7 +434,8 @@ class GraphEditor extends React.Component<Props, State> {
                     </tbody>
                 </table>
 
-                <Stepper maxSteps={7}/>
+                <Stepper maxSteps={7}
+                         onCurrentStepChange={(currentStep: number) => console.log(currentStep)}/>
 
 
 
