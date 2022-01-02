@@ -2,7 +2,7 @@ import './GraphEditor.css'
 import * as d3 from 'd3'
 import {Selection, Simulation} from 'd3'
 import React, {ChangeEvent, RefObject} from 'react'
-import {fordFulkerson} from "../../ford-fulkerson/ford-fulkerson";
+import {fordFulkerson} from '../../ford-fulkerson/ford-fulkerson'
 
 interface Node {
     name: string
@@ -28,10 +28,7 @@ interface State {
 
 class GraphEditor extends React.Component<Props, State> {
 
-    width = 960
-    height = 500
-
-    divRef: RefObject<HTMLDivElement>
+    svg: RefObject<SVGSVGElement>
 
     nodes: Node[] = [
         {name: 'A', color: 0, x: 100, y: 100},
@@ -68,7 +65,7 @@ class GraphEditor extends React.Component<Props, State> {
             selectedLink: null
         }
 
-        this.divRef = React.createRef()
+        this.svg = React.createRef()
 
         this.setNodeName = this.setNodeName.bind(this)
         this.setLinkCapacity = this.setLinkCapacity.bind(this)
@@ -136,10 +133,7 @@ class GraphEditor extends React.Component<Props, State> {
     /// componentDidMount()
 
     componentDidMount() {
-        const svg = d3.select(this.divRef.current)
-            .append('svg')
-            .attr('width', this.width)
-            .attr('height', this.height)
+        const svg = d3.select(this.svg.current)
             .on('contextmenu', (event: Event) => event.preventDefault())
             .on('mousedown', (event: Event) => this.spawnNode(event))
             .on('mousemove', (event: Event) => this.moveDragLine(event))
@@ -147,8 +141,8 @@ class GraphEditor extends React.Component<Props, State> {
 
         this.simulation = d3.forceSimulation(this.nodes)
             .force('charge', d3.forceManyBody().strength(-1000))
-            .force('x', d3.forceX(this.width / 2))
-            .force('y', d3.forceY(this.height / 2))
+            .force('x', d3.forceX(1000 / 2))
+            .force('y', d3.forceY(500 / 2))
             .on('tick', () => this.tick())
 
         // Define arrow markers for links
@@ -398,7 +392,13 @@ class GraphEditor extends React.Component<Props, State> {
     render() {
         return (
             <div id="graph-editor">
-                <table>
+                <svg ref={this.svg}/>
+
+                <div id="flow" className="ui-widget">
+                    Flow: 0
+                </div>
+
+                <table className="ui-widget">
                     <tbody>
                     <tr>
                         <td>
@@ -433,9 +433,9 @@ class GraphEditor extends React.Component<Props, State> {
                     </tbody>
                 </table>
 
-                <div ref={this.divRef}/>
-
-                <button onClick={this.solve}>Solve</button>
+                <div id="menu" className="ui-widget">
+                    <button onClick={this.solve}>Solve</button>
+                </div>
             </div>
         )
     }
