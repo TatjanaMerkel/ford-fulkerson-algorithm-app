@@ -1,3 +1,5 @@
+@use '../../assets/css/colors.scss' as *;
+
 #graph-editor {
 
   position: relative;
@@ -41,6 +43,21 @@
     fill: none;
 
     marker-end: url(#end-arrow);
+  }
+
+  .link path.current-path {
+    stroke: $blue-700;
+
+    marker-end: url(#current-path-end-arrow);
+
+  }
+
+  #end-arrow {
+    fill: black;
+  }
+
+  #current-path-end-arrow path {
+    fill: $blue-700;
   }
 
   .dragLine {

@@ -461,8 +461,16 @@ class GraphEditor extends React.Component<Props, State> {
                                 markerWidth={3} markerHeight={3}
                                 orient='auto'>
 
-                            <path d='M 0 -5 L 10 0 L 0 5'
-                                  fill='black'/>
+                            <path d='M 0 -5 L 10 0 L 0 5'/>
+                        </marker>
+
+                        <marker id='current-path-end-arrow'
+                                viewBox='0 -5 10 10'
+                                refX={6}
+                                markerWidth={3} markerHeight={3}
+                                orient='auto'>
+
+                            <path d='M 0 -5 L 10 0 L 0 5'/>
                         </marker>
                     </defs>
 
@@ -495,6 +503,7 @@ class GraphEditor extends React.Component<Props, State> {
                    onMouseDown={(event => this.toggleSelectedLink(event, link))}>
 
                     <path id={`${link.source.name}${link.target.name}`}
+                          className={this.linkIsOnCurrentPath(link) ? 'current-path' : ''}
                           d={this.getLinkPath(link)}/>
 
                     <text>
@@ -511,6 +520,35 @@ class GraphEditor extends React.Component<Props, State> {
                 </g>
             )}
         </>
+    }
+
+    linkIsOnCurrentPath(link: Link): boolean {
+        if (this.state.mode !== Mode.SOLUTION) {
+            return false
+        }
+        const currentStep = this.state.currentStep! - 1
+        if(currentStep < 0) {
+            return false
+        }
+        const currentLog = this.logs![currentStep]
+
+        if (currentLog.path === null) {
+            return false
+        }
+        const path = currentLog.path!.map(node => this.state.nodes[node])
+
+        let firstNode = path[0]
+
+        for (let secondNode of path.slice(1)) {
+            if (firstNode === link.source && secondNode === link.target) {
+                return true
+            }
+
+            firstNode = secondNode
+        }
+
+        return false
+
     }
 
     renderNodes(): ReactElement {
