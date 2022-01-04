@@ -1,0 +1,120 @@
+#graph-editor {
+
+  position: relative;
+
+  max-width: 1000px;
+  height: 500px;
+
+  margin: auto;
+
+  /* SVG elements */
+
+  svg {
+    width: 100%;
+    height: 100%;
+
+    background-color: #99c9cb;
+
+    cursor: crosshair;
+
+    user-select: none;
+  }
+
+  .node, .link {
+    cursor: pointer;
+  }
+
+  .node text {
+    fill: white;
+
+    font-weight: bold;
+    text-anchor: middle;
+    dominant-baseline: middle;
+
+    pointer-events: none;
+  }
+
+  .link path, .dragLine {
+    stroke: black;
+    stroke-width: 5px;
+
+    fill: none;
+  }
+
+  .dragLine {
+    cursor: default;
+  }
+
+  /* UI widgets */
+
+  .widget {
+    position: absolute;
+
+    margin: 16px;
+    padding: 4px;
+  }
+
+  .widget-bg {
+    background-color: rgba(255, 255, 255, 0.5);
+    border-radius: 8px;
+  }
+
+  #flow {
+    top: 0;
+    left: 50%;
+
+    transform: translate(-50%, 0);
+
+    padding: 8px;
+
+    font-weight: bold;
+  }
+
+  #stepper {
+    width: 200px;
+    bottom: 0;
+    left: 50%;
+    transform: translate(-50%, 0);
+  }
+
+  #solve-button, #edit-button {
+    width: 80px;
+    height: 40px;
+
+    bottom: 0;
+    right: 0;
+
+    border-radius: 8px;
+  }
+
+  table {
+    top: 0;
+    right: 0;
+
+    border-spacing: 8px;
+  }
+
+  table input {
+    width: 40px;
+
+    padding: 2px;
+
+    text-align: center;
+  }
+
+  table button {
+    width: 100%;
+
+    padding: 4px;
+  }
+
+  /* Other */
+
+  .hidden {
+    display: none;
+  }
+
+  .space {
+    width: 8px;
+  }
+}

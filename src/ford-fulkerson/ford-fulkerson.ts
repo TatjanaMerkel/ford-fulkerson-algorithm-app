@@ -25,19 +25,19 @@ type ResidualGraph = Map<Node, ResidualLink[]>
 function fordFulkerson(nodes: Node[], links: Link[]): LogEntry[] {
 
     const resGraph = createResidualGraph(nodes, links)
-    const log: LogEntry[] = []
+    const logs: LogEntry[] = []
 
     let path = findAugmentingPath(resGraph)
-    logState(resGraph, path, log, nodes, links)
+    logState(resGraph, path, logs, nodes, links)
 
     while (path !== null) {
         augment(path, resGraph)
 
         path = findAugmentingPath(resGraph)
-        logState(resGraph, path, log, nodes, links)
+        logState(resGraph, path, logs, nodes, links)
     }
 
-    return log
+    return logs
 }
 
 function createResidualGraph(nodes: Node[], links: Link[]): ResidualGraph {
@@ -169,4 +169,5 @@ function copy<T>(obj: T): T {
     return JSON.parse(JSON.stringify(obj))
 }
 
+export type {LogEntry, Link}
 export {fordFulkerson}

@@ -1,8 +1,8 @@
 import React from "react";
-
+import './Stepper.css'
 
 interface Props {
-    maxStep: number
+    stepCount: number
     onCurrentStepChange: (currentStep: number) => void
 }
 
@@ -26,24 +26,28 @@ class Stepper extends React.Component<Props, State> {
 
     render() {
         return (
-            <div id="stepper" className="ui-widget ui-background flex" >
-                <button onClick={() => this.goToStep(0)}>
+            <div id="stepper" className="widget widget-bg flex">
+                <button onClick={() => this.goToStep(0)}
+                        disabled={this.state.currentStep === 0}>
                     &lt;&lt;
                 </button>
 
-                <button onClick={() => this.goToStep(Math.max(0, this.state.currentStep - 1))}>
+                <button onClick={() => this.goToStep(Math.max(0, this.state.currentStep - 1))}
+                        disabled={this.state.currentStep === 0}>
                     &lt;
                 </button>
 
                 <span>
-                    {this.state.currentStep + 1} / {this.props.maxStep + 1}
+                    {this.state.currentStep + 1} / {this.props.stepCount}
                 </span>
 
-                <button onClick={() => this.goToStep(Math.min(this.props.maxStep, this.state.currentStep + 1))}>
+                <button onClick={() => this.goToStep(Math.min(this.props.stepCount, this.state.currentStep + 1))}
+                        disabled={this.state.currentStep === this.props.stepCount - 1}>
                     &gt;
                 </button>
 
-                <button onClick={() => this.goToStep(this.props.maxStep)}>
+                <button onClick={() => this.goToStep(this.props.stepCount - 1)}
+                        disabled={this.state.currentStep === this.props.stepCount - 1}>
                     &gt;&gt;
                 </button>
             </div>

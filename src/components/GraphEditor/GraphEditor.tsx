@@ -1,15 +1,15 @@
-import './GraphEditor.css'
+import './GraphEditor.scss'
 import * as d3 from 'd3'
 import {Selection, Simulation} from 'd3'
-import React, {ChangeEvent, RefObject} from 'react'
-import {fordFulkerson} from '../../ford-fulkerson/ford-fulkerson'
-import Stepper from "../Stepper/Stepper";
+import React, {ChangeEvent, ReactElement, RefObject} from 'react'
+import Stepper from '../Stepper/Stepper'
+import {fordFulkerson, LogEntry} from '../../ford-fulkerson/ford-fulkerson'
 
 interface Node {
     name: string
-    color: number
     x: number
     y: number
+    color: string
 }
 
 interface Link {
@@ -25,10 +25,12 @@ interface Props {
 interface State {
     selectedNode: Node | null
     selectedLink: Link | null
-    modus: Modus
+    mode: Mode
+
+    currentStep: null | number
 }
 
-enum Modus {
+enum Mode {
     EDIT,
     SOLUTION
 }
@@ -36,33 +38,42 @@ enum Modus {
 class GraphEditor extends React.Component<Props, State> {
 
     svg: RefObject<SVGSVGElement>
+    nodeNameInput: RefObject<HTMLInputElement>
+    linkCapacityInput: RefObject<HTMLInputElement>
 
-    nodes: Node[] = [
-        {name: 'A', color: 0, x: 100, y: 100},
-        {name: 'B', color: 1, x: 150, y: 200},
-        {name: 'C', color: 2, x: 500, y: 300}
-    ]
+    sourceNode: Node = {name: 'A', x: 100, y: 200, color: 'white'}
+    sinkNode: Node = {name: 'Z', x: 500, y: 200, color: 'white'}
 
     nextNodeName = 'D'
-    nextNodeColor = 3
+    nextNodeColor = 0
+
+    colors = d3.scaleOrdinal(d3.schemeCategory10)
+
+    nodes: Node[] = [
+        this.sourceNode,
+        this.sinkNode,
+        {name: 'B', x: 300, y: 200, color: this.colors(String(this.nextNodeColor++))},
+        {name: 'C', x: 300, y: 200, color: this.colors(String(this.nextNodeColor++))}
+    ]
 
     links: Link[] = [
-        {source: this.nodes[0], target: this.nodes[2], capacity: 6, flow: 0},
-        {source: this.nodes[2], target: this.nodes[1], capacity: 9, flow: 0}
+        {source: this.nodes[0], target: this.nodes[2], capacity: 3, flow: 0},
+        {source: this.nodes[2], target: this.nodes[1], capacity: 2, flow: 0},
+        {source: this.nodes[0], target: this.nodes[3], capacity: 2, flow: 0},
+        {source: this.nodes[3], target: this.nodes[1], capacity: 4, flow: 0},
+        {source: this.nodes[2], target: this.nodes[3], capacity: 2, flow: 0},
+        {source: this.nodes[3], target: this.nodes[2], capacity: 3, flow: 0}
     ]
 
     simulation!: Simulation<any, any>
 
-    svgNodeGroupsGroup!: Selection<SVGGElement, unknown, null, undefined>
-    svgLinkGroupsGroup!: Selection<SVGGElement, unknown, null, undefined>
-
-    svgNodeGroups!: Selection<any, Node, any, unknown>
-    svgLinkGroups!: Selection<any, Link, any, unknown>
+    svgNodeRoot!: Selection<SVGGElement, null, null, undefined>
+    svgLinkRoot!: Selection<SVGGElement, null, null, undefined>
 
     dragStartNode: null | Node = null
-    svgDragLine!: Selection<SVGLineElement, unknown, null, undefined>
+    svgDragLine!: Selection<SVGLineElement, null, null, undefined>
 
-    colors = d3.scaleOrdinal(d3.schemeCategory10)
+    logs: null | LogEntry[] = null
 
     constructor(props: any) {
         super(props)
@@ -70,20 +81,122 @@ class GraphEditor extends React.Component<Props, State> {
         this.state = {
             selectedNode: null,
             selectedLink: null,
-            modus: Modus.EDIT
+            mode: Mode.EDIT,
+
+            currentStep: null
         }
 
         this.svg = React.createRef()
+        this.nodeNameInput = React.createRef()
+        this.linkCapacityInput = React.createRef()
 
-        this.setNodeName = this.setNodeName.bind(this)
-        this.setLinkCapacity = this.setLinkCapacity.bind(this)
-        this.solve = this.solve.bind(this)
+        this.deleteSelectedLink = this.deleteSelectedLink.bind(this)
+        this.deleteSelectedNode = this.deleteSelectedNode.bind(this)
         this.edit = this.edit.bind(this)
+        this.setLinkCapacity = this.setLinkCapacity.bind(this)
+        this.setNodeName = this.setNodeName.bind(this)
+        this.solve = this.solve.bind(this)
+        this.tick = this.tick.bind(this)
+    }
+
+    /// componentDidMount()
+
+    componentDidMount() {
+        const svgRef = this.svg.current!
+        const svgSelection: Selection<SVGSVGElement, null, null, undefined> = d3.select(svgRef)
+
+        this.setSvgHandlers(svgSelection)
+        this.createSvgDefs(svgSelection)
+        this.createSvgDragLine(svgSelection)
+
+        this.svgLinkRoot = svgSelection.append('g')
+        this.svgNodeRoot = svgSelection.append('g')
+
+        this.updateSvgLinks()
+        this.updateSvgNodes()
+
+        this.simulation = d3.forceSimulation(this.nodes)
+            .force('charge', d3.forceManyBody().strength(-1000))
+            .force('x', d3.forceX(svgRef.clientWidth / 2))
+            .force('y', d3.forceY(svgRef.clientHeight / 2))
+            .on('tick', this.tick)
+
+        this.simulation.restart()
+    }
+
+    setSvgHandlers(svgSelection: Selection<SVGSVGElement, null, null, undefined>): void {
+        svgSelection
+            .on('contextmenu', (event: Event) => event.preventDefault())
+            .on('mousedown', (event: Event) => this.spawnNode(event))
+            .on('mousemove', (event: Event) => this.moveDragLine(event))
+            .on('mouseup', () => this.cancelDragLine())
+    }
+
+    createSvgDefs(svgSelection: Selection<SVGSVGElement, null, null, undefined>): void {
+        const defs = svgSelection.append('defs')
+
+        const marker = defs.append('marker')
+            .attr('id', 'end-arrow')
+            .attr('viewBox', '0 -5 10 10')
+            .attr('refX', 6)
+            .attr('markerWidth', 3)
+            .attr('markerHeight', 3)
+            .attr('orient', 'auto')
+
+        marker.append('path')
+            .attr('d', 'M 0 -5 L 10 0 L 0 5')
+            .attr('fill', '#000')
+    }
+
+    createSvgDragLine(svgSelection: Selection<SVGSVGElement, null, null, undefined>): void {
+        this.svgDragLine = svgSelection.append('line')
+            .classed('dragLine', true)
+            .classed('hidden', true)
+            .attr('x1', 0)
+            .attr('y1', 0)
+            .attr('x2', 0)
+            .attr('y2', 0)
+            .style('marker-end', 'url(#end-arrow)')
+    }
+
+    /// Simulation
+
+    updateSimNodes(): void {
+        this.simulation.nodes(this.nodes)
+    }
+
+    updateSimLinks(): void {
+        this.simulation.force('link', d3.forceLink(this.links).distance(200))
+    }
+
+    restartSim(): void {
+        this.simulation.alpha(1).restart()
+    }
+
+    /// getNextNodeName()
+
+    getNextNodeName(): string {
+        const nextNodeName = this.nextNodeName
+        let newNextNodeName = nextNodeName
+
+        do {
+            newNextNodeName = this.getNextChar(newNextNodeName)
+        } while (!this.nodeNameExists(newNextNodeName))
+
+        return nextNodeName
+    }
+
+    getNextChar(char: string): string {
+        return String.fromCharCode(char.charCodeAt(0) + 1)
+    }
+
+    nodeNameExists(name: string): boolean {
+        return this.nodes.find(node => node.name === name) !== undefined
     }
 
     /// Event handlers
 
-    private setNodeName(event: ChangeEvent<HTMLInputElement>): void {
+    setNodeName(event: ChangeEvent<HTMLInputElement>): void {
         const newName = event.target.value
 
         const selectedNode = this.state.selectedNode
@@ -93,10 +206,10 @@ class GraphEditor extends React.Component<Props, State> {
             this.setState({selectedNode})
         }
 
-        this.updateSvgNodes(this.nodes)
+        this.updateSvgNodes()
     }
 
-    private setLinkCapacity(event: ChangeEvent<HTMLInputElement>): void {
+    setLinkCapacity(event: ChangeEvent<HTMLInputElement>): void {
         const newLinkCapacity = Number(event.target.value)
 
         const selectedLink = this.state.selectedLink!
@@ -104,10 +217,10 @@ class GraphEditor extends React.Component<Props, State> {
         selectedLink.capacity = newLinkCapacity
         this.setState({selectedLink})
 
-        this.updateSvgLinks(this.links)
+        this.updateSvgLinks()
     }
 
-    private solve(event: React.MouseEvent<HTMLButtonElement>): void {
+    solve(): void {
         const fulkersonNodes = this.nodes.map((value, index) => index)
         const fulkersonLinks = this.links.map(link => ({
             source: this.nodes.indexOf(link.source),
@@ -116,154 +229,101 @@ class GraphEditor extends React.Component<Props, State> {
             flow: 0
         }))
 
+        this.logs = fordFulkerson(fulkersonNodes, fulkersonLinks)
 
-        const logs = fordFulkerson(fulkersonNodes, fulkersonLinks)
-
-        console.log(logs[logs.length - 1].maxFlow)
-
-        const links = logs[logs.length - 1].links.map(link => ({
-            source: this.nodes[link.source],
-            target: this.nodes[link.target],
-            capacity: link.capacity,
-            flow: link.flow
-        }))
-
-        this.updateLinkFlows(links)
-        this.setState({modus: Modus.SOLUTION})
+        this.drawGraphAtStep(0)
+        this.setState({currentStep: 0})
+        this.setState({mode: Mode.SOLUTION}, this.updateSvgLinks)
     }
 
-    private edit(): void {
-        this.setState({modus: Modus.EDIT})
+    edit(): void {
+        this.setState({currentStep: null})
+        this.logs = null
+        this.setState({mode: Mode.EDIT}, this.updateSvgLinks)
     }
 
-    private updateLinkFlows(links: Link[]): void {
-        for (const link of links) {
-            const l = this.links.find(value => value.source === link.source && value.target === link.target)
-            l!.flow = link.flow
-        }
+    drawGraphAtStep(step: number): void {
+        const currentLog: LogEntry = this.logs![step]
 
-        this.updateSvgLinks(this.links)
-    }
-
-    /// componentDidMount()
-
-    componentDidMount() {
-        const svg = d3.select(this.svg.current)
-            .on('contextmenu', (event: Event) => event.preventDefault())
-            .on('mousedown', (event: Event) => this.spawnNode(event))
-            .on('mousemove', (event: Event) => this.moveDragLine(event))
-            .on('mouseup', () => this.cancelDragLine())
-
-        this.simulation = d3.forceSimulation(this.nodes)
-            .force('charge', d3.forceManyBody().strength(-1000))
-            .force('x', d3.forceX(1000 / 2))
-            .force('y', d3.forceY(500 / 2))
-            .on('tick', () => this.tick())
-
-        // Define arrow markers for links
-        svg.append('defs')
-            .append('marker')
-            .attr('id', 'end-arrow')
-            .attr('viewBox', '0 -5 10 10')
-            .attr('refX', 6)
-            .attr('markerWidth', 3)
-            .attr('markerHeight', 3)
-            .attr('orient', 'auto')
-            .append('path')
-            .attr('d', 'M0,-5L10,0L0,5')
-            .attr('fill', '#000')
-
-        this.svgDragLine = svg.append('line')
-            .style('marker-end', 'url(#end-arrow)')
-            .attr('class', 'dragline hidden')
-            .attr('x1', 0)
-            .attr('y1', 0)
-            .attr('x2', 0)
-            .attr('y2', 0)
-
-        this.svgLinkGroupsGroup = svg.append('g')
-        this.updateLinks(this.links)
-
-        this.svgNodeGroupsGroup = svg.append('g')
-        this.updateSvgNodes(this.nodes)
-
-        this.simulation.restart()
+        this.links = currentLog.links.map(this.getLink)
+        this.updateSvgLinks()
     }
 
     /// Update nodes and links
 
-    private updateSvgNodes(nodes: Node[]): void {
-        this.svgNodeGroups = this.svgNodeGroupsGroup.selectAll('g').data(nodes)
+    updateSvgNodes(): void {
+        /// Handle new nodes
 
-        this.svgNodeGroups.selectAll('circle')
-            .style('fill', (node: any) => {
-                return (node === this.state.selectedNode)
-                    ? d3.rgb(this.colors(String(node.color))).brighter().toString()
-                    : this.colors(String(node.color));
-            })
-
-        this.svgNodeGroups.selectAll('text')
-            .text((node: any) => node.name)
-
-        let newSvgNodeGroups = this.svgNodeGroupsGroup.selectAll('g')
-            .data(nodes)
+        const newSvgNodes = this.svgNodeRoot.selectAll('g').data(this.nodes)
             .enter().append('g')
-            .classed('node-group', true)
-
-        newSvgNodeGroups.append('circle')
             .classed('node', true)
+
+        newSvgNodes.append('circle')
             .attr('r', 20)
-            .style('fill', (node: Node) => {
-                return (node === this.state.selectedNode)
-                    ? d3.rgb(this.colors(String(node.color))).brighter().toString()
-                    : this.colors(String(node.color));
-            })
-            .style('stroke', (node: Node) => d3.rgb(this.colors(String(node.color))).darker().toString())
+
+        newSvgNodes.append('text')
+
+        /// Handle new & updated nodes
+
+        const svgNodes = this.svgNodeRoot.selectAll('g').data(this.nodes)
+
+        svgNodes.select('circle')
+            .style('fill', (node: Node) => (node === this.state.selectedNode)
+                ? d3.rgb(node.color).brighter().toString()
+                : node.color)
+            .style('stroke', (node: Node) => d3.rgb(node.color).darker().toString())
             .on('mousedown', (event: Event, node: Node) => this.startDragLine(node))
             .on('mouseup', (event: Event, node: Node) => this.onCircleMouseUp(node))
 
-        newSvgNodeGroups.append('text')
+        svgNodes.select('text')
             .text((node: Node) => node.name)
+            .style('fill', (node: Node) => (node === this.sourceNode || node === this.sinkNode)
+                ? 'black'
+                : 'white')
 
-        this.svgNodeGroups = newSvgNodeGroups.merge(this.svgNodeGroups)
+        /// Handle deleted nodes
+
+        this.svgNodeRoot.selectAll('g').data(this.nodes)
+            .exit().remove()
     }
 
-    private updateLinks(links: Link[]) {
-        this.updateSvgLinks(links)
-        this.simulation.force('link', d3.forceLink(links).distance(200))
-        this.simulation.alpha(1).restart()
-    }
+    updateSvgLinks(): void {
+        /// Create new links
 
-    private updateSvgLinks(links: Link[]): void {
-        this.svgLinkGroups = this.svgLinkGroupsGroup.selectAll('g').data(links)
-
-        this.svgLinkGroups.selectAll('tspan')
-            .text((link: any) => `${link.flow} / ${link.capacity}`)
-
-        let newSvgLinkGroups = this.svgLinkGroupsGroup.selectAll('g')
-            .data(links)
+        const newSvgLinks = this.svgLinkRoot.selectAll('g').data(this.links)
             .enter().append('g')
-
-        newSvgLinkGroups.append('path')
-            .attr('id', (link: Link) => `${link.source.name}${link.target.name}`)
             .classed('link', true)
-            .style('marker-end', 'url(#end-arrow)')
-            .on('mousedown', (event: Event, link: Link) => this.toggleSelectedLink(event, link))
 
-        newSvgLinkGroups.append('text')
+        newSvgLinks.append('path')
+            .attr('id', (link: Link) => `${link.source.name}${link.target.name}`)
+            .style('marker-end', 'url(#end-arrow)')
+
+        newSvgLinks.append('text')
             .append('textPath')
             .attr('xlink:href', (link: Link) => `#${link.source.name}${link.target.name}`)
             .attr('startOffset', '50%')
             .append('tspan')
+            .text((link: Link) => `${link.flow} / ${link.capacity}`)
             .attr('dy', -10)
-            .text((link: Link) => `0 / ${link.capacity}`)
 
-        this.svgLinkGroups = newSvgLinkGroups.merge(this.svgLinkGroups)
+        /// Update new & existing links
+
+        this.svgLinkRoot.selectAll('g').data(this.links)
+            .on('mousedown', (event: Event, link: Link) => this.toggleSelectedLink(event, link))
+            .select('tspan')
+            .text((link: Link) => this.state.mode === Mode.EDIT
+                ? String(link.capacity)
+                : `${link.flow} / ${link.capacity}`)
+
+        /// Handle deleted links
+
+        this.svgLinkRoot.selectAll('g').data(this.links)
+            .exit().remove()
     }
 
     /// DragLine methods
 
-    private startDragLine(node: Node) {
+    startDragLine(node: Node) {
         this.dragStartNode = node
 
         this.svgDragLine
@@ -274,7 +334,7 @@ class GraphEditor extends React.Component<Props, State> {
             .attr('y2', node.y)
     }
 
-    private moveDragLine(event: Event) {
+    moveDragLine(event: Event) {
         if (this.dragStartNode === null) {
             return
         }
@@ -288,12 +348,12 @@ class GraphEditor extends React.Component<Props, State> {
             .attr('y2', y)
     }
 
-    private cancelDragLine() {
+    cancelDragLine() {
         this.svgDragLine.classed('hidden', true)
         this.dragStartNode = null
     }
 
-    private onCircleMouseUp(node: Node): void {
+    onCircleMouseUp(node: Node): void {
         if (node === this.dragStartNode) {
             this.toggleSelectedNode(node)
         } else {
@@ -301,29 +361,37 @@ class GraphEditor extends React.Component<Props, State> {
         }
     }
 
-    private toggleSelectedNode(node: Node): void {
+    toggleSelectedNode(node: Node): void {
         this.setState({selectedLink: null})
 
         // deselect potentially selected link
         const selectedNode = (this.state.selectedNode === node) ? null : node
 
         this.setState({selectedNode})
-        this.updateSvgNodes(this.nodes)
+        this.updateSvgNodes()
+
+        if (selectedNode) {
+            this.focusNodeNameInput()
+        }
     }
 
-    private toggleSelectedLink(event: Event, link: Link): void {
+    toggleSelectedLink(event: Event, link: Link): void {
         event.stopPropagation()
 
         // deselect potentially selected node
         this.setState({selectedNode: null})
-        this.updateSvgNodes(this.nodes)
+        this.updateSvgNodes()
 
         const selectedLink = (this.state.selectedLink === link) ? null : link
         this.setState({selectedLink})
-        this.updateSvgLinks(this.links)
+        this.updateSvgLinks()
+
+        if (selectedLink) {
+            this.focusLinkCapacityInput()
+        }
     }
 
-    private completeDragLine(node: Node) {
+    completeDragLine(node: Node) {
         if (this.dragStartNode === null || this.dragStartNode === node) {
             return
         }
@@ -332,14 +400,22 @@ class GraphEditor extends React.Component<Props, State> {
             link.source === this.dragStartNode && link.target === node)
 
         if (sameLinks.length === 0) {
-            this.links.push({source: this.dragStartNode, target: node, capacity: 0, flow: 0})
-            this.updateLinks(this.links)
+            const newLink = {source: this.dragStartNode, target: node, capacity: 0, flow: 0}
+            this.links.push(newLink)
+
+            this.setState({selectedNode: null, selectedLink: newLink})
+
+            this.updateSimLinks()
+            this.updateSvgLinks()
+            this.restartSim()
+
+            this.focusLinkCapacityInput()
         }
     }
 
     /// spawnNode()
 
-    private spawnNode(event: Event): void {
+    spawnNode(event: Event): void {
         if (this.nodes.length >= 26) {
             return
         }
@@ -349,23 +425,41 @@ class GraphEditor extends React.Component<Props, State> {
         }
 
         const [x, y] = d3.pointer(event);
-        const node = {name: this.nextNodeName, color: this.nextNodeColor, x, y}
+        const node = {name: this.getNextNodeName(), x, y, color: this.colors(String(this.nextNodeColor))}
         this.nodes.push(node)
 
         this.nextNodeName = String.fromCharCode(this.nextNodeName.charCodeAt(0) + 1)
         this.nextNodeColor = (this.nextNodeColor + 1) % 10
 
-        this.simulation.nodes(this.nodes)
-        this.updateSvgNodes(this.nodes)
+        this.setState({selectedNode: node, selectedLink: null})
 
-        this.simulation.alpha(1).restart()
+        this.updateSimNodes()
+        this.updateSvgNodes()
+        this.restartSim()
+
+        this.focusNodeNameInput()
+    }
+
+    focusNodeNameInput(): void {
+        setTimeout(() => {
+            this.nodeNameInput.current!.focus()
+            this.nodeNameInput.current!.select()
+        }, 1)
+    }
+
+    focusLinkCapacityInput(): void {
+        setTimeout(() => {
+            this.linkCapacityInput.current!.focus()
+            this.linkCapacityInput.current!.select()
+        }, 1)
     }
 
     /// Simulation.tick()
 
-    private tick(): void {
-        const links: Selection<any, any, any, any> = this.svgLinkGroups.selectAll('.link')
-        links.attr('d', (link: Link) => {
+    tick(): void {
+        const svgLinks = this.svgLinkRoot.selectAll('.link').select('path').data(this.links)
+
+        svgLinks.attr('d', (link: Link) => {
             const deltaX = link.target.x - link.source.x
             const deltaY = link.target.y - link.source.y
             const dist = Math.sqrt(deltaX * deltaX + deltaY * deltaY)
@@ -388,11 +482,11 @@ class GraphEditor extends React.Component<Props, State> {
             }
         })
 
-        this.svgNodeGroups
+        this.svgNodeRoot.selectAll('g').data(this.nodes)
             .attr('transform', (node: Node) => `translate(${node.x},${node.y})`)
     }
 
-    private oppositeLinkExists(link: Link): boolean {
+    oppositeLinkExists(link: Link): boolean {
         for (const l of this.links) {
             if (l.source === link.target && l.target === link.source) {
                 return true
@@ -402,67 +496,166 @@ class GraphEditor extends React.Component<Props, State> {
         return false
     }
 
-    /// render()
+    getLink = (fulkersonLink: any) => {
+        return {
+            source: this.nodes[fulkersonLink.source],
+            target: this.nodes[fulkersonLink.target],
+            capacity: fulkersonLink.capacity,
+            flow: fulkersonLink.flow
+        }
+    }
+
+    /// Delete nodes & links
+
+    deleteSelectedNode(): void {
+        const selectedNode = this.state.selectedNode!
+
+        this.deleteNodeLinks(selectedNode)
+
+        this.nodes = this.nodes.filter(node => node !== selectedNode)
+        this.updateSimNodes()
+        this.updateSvgNodes()
+
+        this.setState({selectedNode: null})
+
+        this.restartSim()
+    }
+
+    deleteNodeLinks(node: Node) {
+        const deleteLinks = this.links.filter(link => link.source === node || link.target === node)
+        this.links = this.links.filter(link => !deleteLinks.includes(link))
+
+        this.updateSimLinks()
+        this.updateSvgLinks()
+    }
+
+    deleteSelectedLink(): void {
+        const selectedLink = this.state.selectedLink!
+
+        this.links = this.links.filter(link => link !== selectedLink)
+        this.updateSimLinks()
+        this.updateSvgLinks()
+
+        this.setState({selectedLink: null})
+
+        this.restartSim()
+    }
+
+    /// Render
 
     render() {
         return (
             <div id="graph-editor">
                 <svg ref={this.svg}/>
 
-                <div id="flow" className="ui-widget ui-background">
-                    Flow: 0
-                </div>
+                {this.state.mode === Mode.EDIT && this.state.selectedNode && this.renderNodeWidget()}
+                {this.state.mode === Mode.EDIT && this.state.selectedLink && this.renderLinkWidget()}
+                {this.state.mode === Mode.EDIT && this.renderSolveButton()}
 
-                <table className="ui-widget ui-background">
-                    <tbody>
-                    <tr>
-                        <td>
-                            <label htmlFor="nodeText">Node Name</label>
-                        </td>
-                        <td>
-                            <div className="space"/>
-                        </td>
-                        <td>
-                            <input id="nodeText"
-                                   type="text"
-                                   disabled={this.state.selectedNode === null}
-                                   value={this.state.selectedNode ? this.state.selectedNode.name : ''}
-                                   onChange={this.setNodeName}/>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <label htmlFor="linkCapacity">Link Capacity</label>
-                        </td>
-                        <td>
-                            <div className="space"/>
-                        </td>
-                        <td>
-                            <input id="linkCapacity"
-                                   type="number" min={0}
-                                   disabled={this.state.selectedLink === null}
-                                   value={this.state.selectedLink ? this.state.selectedLink.capacity : ''}
-                                   onChange={this.setLinkCapacity}/>
-                        </td>
-                    </tr>
-                    </tbody>
-                </table>
-
-                {this.state.modus === Modus.SOLUTION &&
-
-                    <Stepper maxStep={7}
-                             onCurrentStepChange={(currentStep: number) => console.log(currentStep)}/>
-                }
-
-                <div id="menu" className="ui-widget">
-                    {this.state.modus === Modus.EDIT ?
-                        <button className="btn" onClick={this.solve}>Solve</button>
-                        :
-                        <button className="btn" onClick={this.edit}>Edit</button>
-                    }
-                </div>
-
+                {this.state.mode === Mode.SOLUTION && this.renderFlowWidget()}
+                {this.state.mode === Mode.SOLUTION && this.renderStepper()}
+                {this.state.mode === Mode.SOLUTION && this.renderEditButton()}
             </div>
+        )
+    }
+
+    renderFlowWidget(): ReactElement | void {
+        const logs = this.logs!
+        const currentStep = this.state.currentStep!
+
+        const maxFlow = logs[currentStep].maxFlow
+
+        return (
+            <div id="flow" className="widget widget-bg">
+                Flow: {maxFlow}
+            </div>
+        )
+    }
+
+    renderNodeWidget(): ReactElement {
+        const selectedNode = this.state.selectedNode!
+
+        return (
+            <table id="node-widget" className="widget widget-bg">
+                <tbody>
+                <tr>
+                    <td>
+                        <label htmlFor="node-name-input">Node Name</label>
+                    </td>
+                    <td>
+                        <input id="node-name-input" ref={this.nodeNameInput}
+                               type="text" minLength={1} maxLength={2}
+                               value={selectedNode.name}
+                               onChange={this.setNodeName}/>
+                    </td>
+                </tr>
+                <tr>
+                    <td colSpan={2}>
+                        <button className="danger-button"
+                                disabled={this.state.selectedNode === this.sourceNode
+                                    || this.state.selectedNode === this.sinkNode}
+                                onClick={this.deleteSelectedNode}>
+
+                            Delete Node
+                        </button>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        )
+    }
+
+    renderLinkWidget(): ReactElement {
+        const selectedLink = this.state.selectedLink!
+
+        return (
+            <table id="link-widget" className="widget widget-bg">
+                <tbody>
+                <tr>
+                    <td>
+                        <label htmlFor="link-capacity-input">Link Capacity</label>
+                    </td>
+                    <td>
+                        <input id="link-capacity-input" ref={this.linkCapacityInput}
+                               type="number" min={0} max={99}
+                               value={selectedLink.capacity}
+                               onChange={this.setLinkCapacity}/>
+                    </td>
+                </tr>
+                <tr>
+                    <td colSpan={2}>
+                        <button className="danger-button"
+                                onClick={this.deleteSelectedLink}>
+
+                            Delete Link
+                        </button>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        )
+    }
+
+    renderStepper(): ReactElement {
+        return (
+            <Stepper stepCount={this.logs!.length}
+                     onCurrentStepChange={(currentStep: number) => {
+                         this.setState({currentStep}, () => this.drawGraphAtStep(currentStep))
+                     }}/>
+        )
+    }
+
+    renderEditButton(): ReactElement {
+        return (
+            <button id="edit-button" className="widget warning-button"
+                    onClick={this.edit}>Edit</button>
+        )
+    }
+
+    renderSolveButton(): ReactElement {
+        return (
+            <button id="solve-button" className="widget confirm-button"
+                    onClick={this.solve}>Solve</button>
         )
     }
 }
