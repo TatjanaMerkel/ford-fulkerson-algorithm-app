@@ -1,8 +1,8 @@
 import './graph-editor.scss'
 import * as d3 from 'd3'
-import {Selection, Simulation} from 'd3'
 import React, {ChangeEvent, ReactElement, RefObject} from 'react'
 import Stepper from '../Stepper/Stepper'
+import {Simulation} from 'd3'
 import {fordFulkerson, LogEntry} from '../../ford-fulkerson/ford-fulkerson'
 
 interface Node {
@@ -28,8 +28,16 @@ interface State {
     nodes: Node[]
     links: Link[]
 
-    selectedNode: Node | null
-    selectedLink: Link | null
+    selectedNode: null | Node
+    selectedLink: null | Link
+
+    dragStartNode: null | Node
+    dragLine: {
+        x1: number
+        y1: number
+        x2: number
+        y2: number
+    }
 
     currentStep: null | number
 }
@@ -44,7 +52,6 @@ class GraphEditor extends React.Component<Props, State> {
     svg: RefObject<SVGSVGElement>
     nodeNameInput: RefObject<HTMLInputElement>
     linkCapacityInput: RefObject<HTMLInputElement>
-    dragLine: RefObject<SVGLineElement>
 
     sourceNode: Node = {name: 'A', x: 100, y: 200, color: 'white'}
     sinkNode: Node = {name: 'Z', x: 500, y: 200, color: 'white'}
@@ -55,9 +62,6 @@ class GraphEditor extends React.Component<Props, State> {
     colors = d3.scaleOrdinal(d3.schemeCategory10)
 
     simulation!: Simulation<any, any>
-
-    dragStartNode: null | Node = null
-    svgDragLine!: Selection<SVGLineElement, null, null, undefined>
 
     logs: null | LogEntry[] = null
 
@@ -89,13 +93,20 @@ class GraphEditor extends React.Component<Props, State> {
             selectedNode: null,
             selectedLink: null,
 
+            dragStartNode: null,
+            dragLine: {
+                x1: 0,
+                y1: 0,
+                x2: 0,
+                y2: 0
+            },
+
             currentStep: null
         }
 
         this.svg = React.createRef()
         this.nodeNameInput = React.createRef()
         this.linkCapacityInput = React.createRef()
-        this.dragLine = React.createRef()
 
         this.deleteSelectedLink = this.deleteSelectedLink.bind(this)
         this.deleteSelectedNode = this.deleteSelectedNode.bind(this)
@@ -113,8 +124,6 @@ class GraphEditor extends React.Component<Props, State> {
 
     componentDidMount() {
         const svgRef = this.svg.current!
-
-        this.svgDragLine = d3.select(this.dragLine.current!)
 
         this.simulation = d3.forceSimulation(this.state.nodes)
             .force('charge', d3.forceManyBody().strength(-1000))
@@ -213,38 +222,43 @@ class GraphEditor extends React.Component<Props, State> {
 
     /// DragLine methods
 
-    startDragLine(node: Node) {
-        this.dragStartNode = node
+    startDragLine(event: React.MouseEvent, node: Node) {
+        event.stopPropagation()
 
-        this.svgDragLine
-            .classed('hidden', false)
-            .attr('x1', node.x)
-            .attr('y1', node.y)
-            .attr('x2', node.x)
-            .attr('y2', node.y)
+        const dragStartNode = node
+        const dragLine = {
+            x1: node.x,
+            y1: node.y,
+            x2: node.x,
+            y2: node.y
+        }
+
+        this.setState({dragStartNode, dragLine})
     }
 
     moveDragLine(event: React.MouseEvent<SVGSVGElement>) {
-        if (this.dragStartNode === null) {
+        if (this.state.dragStartNode === null) {
             return
         }
 
         const [x, y] = d3.pointer(event)
 
-        this.svgDragLine
-            .attr('x1', this.dragStartNode.x)
-            .attr('y1', this.dragStartNode.y)
-            .attr('x2', x)
-            .attr('y2', y)
+        const dragLine = {
+            x1: this.state.dragStartNode.x,
+            y1: this.state.dragStartNode.y,
+            x2: x,
+            y2: y
+        }
+
+        this.setState({dragLine})
     }
 
     cancelDragLine() {
-        this.svgDragLine.classed('hidden', true)
-        this.dragStartNode = null
+        this.setState({dragStartNode: null})
     }
 
     onCircleMouseUp(node: Node): void {
-        if (node === this.dragStartNode) {
+        if (node === this.state.dragStartNode) {
             this.toggleSelectedNode(node)
         } else {
             this.completeDragLine(node)
@@ -279,15 +293,15 @@ class GraphEditor extends React.Component<Props, State> {
     }
 
     completeDragLine(node: Node) {
-        if (this.dragStartNode === null || this.dragStartNode === node) {
+        if (this.state.dragStartNode === null || this.state.dragStartNode === node) {
             return
         }
 
         const sameLinks = this.state.links.filter((link: Link) =>
-            link.source === this.dragStartNode && link.target === node)
+            link.source === this.state.dragStartNode && link.target === node)
 
         if (sameLinks.length === 0) {
-            const newLink = {source: this.dragStartNode, target: node, capacity: 0, flow: 0}
+            const newLink = {source: this.state.dragStartNode, target: node, capacity: 0, flow: 0}
             const links = this.state.links.slice()
             links.push(newLink)
             this.setState({links})
@@ -308,7 +322,7 @@ class GraphEditor extends React.Component<Props, State> {
             return
         }
 
-        if (this.dragStartNode !== null) {
+        if (this.state.dragStartNode !== null) {
             return
         }
 
@@ -452,9 +466,11 @@ class GraphEditor extends React.Component<Props, State> {
                         </marker>
                     </defs>
 
-                    <line ref={this.dragLine}
-                          className='dragLine hidden'
-                          x1={0} y1={0} x2={0} y2={0}/>
+                    <line className={`dragLine ${this.state.dragStartNode === null ? 'hidden' : ''}`}
+                          x1={this.state.dragLine.x1}
+                          y1={this.state.dragLine.y1}
+                          x2={this.state.dragLine.x2}
+                          y2={this.state.dragLine.y2}/>
 
                     {this.renderLinks()}
                     {this.renderNodes()}
@@ -507,7 +523,7 @@ class GraphEditor extends React.Component<Props, State> {
                     <circle r={20}
                             fill={node === this.state.selectedNode ? d3.rgb(node.color).brighter().toString() : node.color}
                             stroke={d3.rgb(node.color).darker().toString()}
-                            onMouseDown={() => this.startDragLine(node)}
+                            onMouseDown={(event) => this.startDragLine(event, node)}
                             onMouseUp={() => this.onCircleMouseUp(node)}/>
 
                     <text style={{fill: node === this.sourceNode || node === this.sinkNode ? 'black' : 'white'}}>
