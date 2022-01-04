@@ -1,5 +1,5 @@
 import './App.css'
-import GraphEditor from './components/GraphEditor/GraphEditor'
+import {GraphEditor} from './components/graph-editor/graph-editor'
 
 function App() {
     return (
