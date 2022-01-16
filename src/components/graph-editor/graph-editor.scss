@@ -49,7 +49,12 @@
     stroke: $blue-700;
 
     marker-end: url(#current-path-end-arrow);
+  }
 
+  .link path.bottleneck {
+    stroke: $red-700;
+
+    marker-end: url(#bottleneck-link-end-arrow);
   }
 
   #end-arrow {
@@ -58,6 +63,15 @@
 
   #current-path-end-arrow path {
     fill: $blue-700;
+  }
+
+  #bottleneck-link-end-arrow path {
+    fill: $red-700;
+  }
+
+  tspan.augmented {
+    fill: $red-700;
+    font-weight: bold;
   }
 
   .dragLine {

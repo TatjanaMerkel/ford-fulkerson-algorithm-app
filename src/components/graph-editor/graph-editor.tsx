@@ -1,9 +1,10 @@
 import './graph-editor.scss'
 import * as d3 from 'd3'
+import {Simulation} from 'd3'
 import React, {ChangeEvent, ReactElement, RefObject} from 'react'
 import Stepper from '../Stepper/Stepper'
-import {Simulation} from 'd3'
-import {fordFulkerson, LogEntry} from '../../ford-fulkerson/ford-fulkerson'
+import {fordFulkerson} from '../../ford-fulkerson/ford-fulkerson'
+import {DisplayLink, DisplayStep, getDisplaySteps} from "./display-steps";
 
 interface Node {
     name: string
@@ -40,6 +41,7 @@ interface State {
     }
 
     currentStep: null | number
+    displaySteps: null | DisplayStep[]
 }
 
 enum Mode {
@@ -62,8 +64,6 @@ class GraphEditor extends React.Component<Props, State> {
     colors = d3.scaleOrdinal(d3.schemeCategory10)
 
     simulation!: Simulation<any, any>
-
-    logs: null | LogEntry[] = null
 
     constructor(props: any) {
         super(props)
@@ -101,7 +101,8 @@ class GraphEditor extends React.Component<Props, State> {
                 y2: 0
             },
 
-            currentStep: null
+            currentStep: null,
+            displaySteps: null
         }
 
         this.svg = React.createRef()
@@ -200,24 +201,16 @@ class GraphEditor extends React.Component<Props, State> {
             flow: 0
         }))
 
-        this.logs = fordFulkerson(fulkersonNodes, fulkersonLinks)
+        const logs = fordFulkerson(fulkersonNodes, fulkersonLinks)
 
-        this.drawGraphAtStep(0)
-        this.setState({currentStep: 0})
-        this.setState({mode: Mode.SOLUTION})
+        const displaySteps = getDisplaySteps(logs)
+
+        this.setState({mode: Mode.SOLUTION, displaySteps, currentStep: 0})
     }
 
     edit(): void {
         this.setState({currentStep: null})
-        this.logs = null
         this.setState({mode: Mode.EDIT})
-    }
-
-    drawGraphAtStep(step: number): void {
-        const currentLog: LogEntry = this.logs![step]
-
-        const links = currentLog.links.map(this.getLink)
-        this.setState({links})
     }
 
     /// DragLine methods
@@ -472,6 +465,15 @@ class GraphEditor extends React.Component<Props, State> {
 
                             <path d='M 0 -5 L 10 0 L 0 5'/>
                         </marker>
+
+                        <marker id='bottleneck-link-end-arrow'
+                                viewBox='0 -5 10 10'
+                                refX={6}
+                                markerWidth={3} markerHeight={3}
+                                orient='auto'>
+
+                            <path d='M 0 -5 L 10 0 L 0 5'/>
+                        </marker>
                     </defs>
 
                     <line className={`dragLine ${this.state.dragStartNode === null ? 'hidden' : ''}`}
@@ -480,7 +482,7 @@ class GraphEditor extends React.Component<Props, State> {
                           x2={this.state.dragLine.x2}
                           y2={this.state.dragLine.y2}/>
 
-                    {this.renderLinks()}
+                    {this.state.mode === Mode.EDIT ? this.renderLinks() : this.renderStepLinks()}
                     {this.renderNodes()}
                 </svg>
 
@@ -503,7 +505,6 @@ class GraphEditor extends React.Component<Props, State> {
                    onMouseDown={(event => this.toggleSelectedLink(event, link))}>
 
                     <path id={`${link.source.name}${link.target.name}`}
-                          className={this.linkIsOnCurrentPath(link) ? 'current-path' : ''}
                           d={this.getLinkPath(link)}/>
 
                     <text>
@@ -522,33 +523,45 @@ class GraphEditor extends React.Component<Props, State> {
         </>
     }
 
-    linkIsOnCurrentPath(link: Link): boolean {
-        if (this.state.mode !== Mode.SOLUTION) {
-            return false
+    renderStepLinks(): ReactElement {
+        const displayStep = this.state.displaySteps![this.state.currentStep!]
+
+        return <>
+            {displayStep.map((displayLink, index) =>
+                <g key={index}
+                   className='link'>
+
+                    <path id={`${displayLink.source}${displayLink.target}`}
+                          className={[
+                              ...(displayLink.isOnPath ? ['current-path'] : []),
+                              ...(displayLink.isBottleneck ? ['bottleneck'] : [])
+                          ].join(' ')}
+                          d={this.getLinkPath(this.displayLinkToLink(displayLink))}/>
+
+                    <text>
+                        <textPath xlinkHref={`#${displayLink.source}${displayLink.target}`}
+                                  startOffset='50%'>
+
+                            <tspan dy={-10}
+                                   className={displayLink.isAugmented ? 'augmented' : ''}>
+                                {this.state.mode === Mode.EDIT
+                                    ? String(displayLink.capacity)
+                                    : `${displayLink.flow} / ${displayLink.capacity}`}
+                            </tspan>
+                        </textPath>
+                    </text>
+                </g>
+            )}
+        </>
+    }
+
+    displayLinkToLink(displayLink: DisplayLink): Link {
+        return {
+            source: this.state.nodes[displayLink.source],
+            target: this.state.nodes[displayLink.target],
+            flow: displayLink.flow,
+            capacity: displayLink.capacity
         }
-        const currentStep = this.state.currentStep! - 1
-        if(currentStep < 0) {
-            return false
-        }
-        const currentLog = this.logs![currentStep]
-
-        if (currentLog.path === null) {
-            return false
-        }
-        const path = currentLog.path!.map(node => this.state.nodes[node])
-
-        let firstNode = path[0]
-
-        for (let secondNode of path.slice(1)) {
-            if (firstNode === link.source && secondNode === link.target) {
-                return true
-            }
-
-            firstNode = secondNode
-        }
-
-        return false
-
     }
 
     renderNodes(): ReactElement {
@@ -573,10 +586,7 @@ class GraphEditor extends React.Component<Props, State> {
     }
 
     renderFlowWidget(): ReactElement {
-        const logs = this.logs!
-        const currentStep = this.state.currentStep!
-
-        const maxFlow = logs[currentStep].maxFlow
+        const maxFlow = -1
 
         return (
             <div id='flow' className='widget widget-bg'>
@@ -651,10 +661,8 @@ class GraphEditor extends React.Component<Props, State> {
 
     renderStepper(): ReactElement {
         return (
-            <Stepper stepCount={this.logs!.length}
-                     onCurrentStepChange={(currentStep: number) => {
-                         this.setState({currentStep}, () => this.drawGraphAtStep(currentStep))
-                     }}/>
+            <Stepper stepCount={this.state.displaySteps!.length}
+                     onCurrentStepChange={(currentStep: number) => this.setState({currentStep})}/>
         )
     }
 
