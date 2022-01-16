@@ -11,7 +11,10 @@ interface DisplayLink {
     isAugmented: boolean
 }
 
-type DisplayStep = DisplayLink[]
+interface DisplayStep {
+    links: DisplayLink[]
+    maxFlow: number
+}
 
 function getDisplaySteps(logs: LogEntry[]): DisplayStep[] {
     const displaySteps = []
@@ -58,10 +61,10 @@ function getDisplaySteps(logs: LogEntry[]): DisplayStep[] {
             }
         }
 
-        displaySteps.push(displayLinks)
-        displaySteps.push(displayLinksWithPath)
-        displaySteps.push(displayLinksWithBottleneck)
-        displaySteps.push(displayLinksAugmented)
+        displaySteps.push({links: displayLinks, maxFlow: log.maxFlow})
+        displaySteps.push({links: displayLinksWithPath, maxFlow: log.maxFlow})
+        displaySteps.push({links: displayLinksWithBottleneck, maxFlow: log.maxFlow})
+        displaySteps.push({links: displayLinksAugmented, maxFlow: log.maxFlow})
     }
 
     const lastStepDisplayLinks = logs[logs.length - 1].links.map(link => ({
@@ -71,7 +74,7 @@ function getDisplaySteps(logs: LogEntry[]): DisplayStep[] {
         isAugmented: false
     }))
 
-    displaySteps.push(lastStepDisplayLinks)
+    displaySteps.push({links: lastStepDisplayLinks, maxFlow: logs[logs.length - 1].maxFlow})
 
     return displaySteps
 }

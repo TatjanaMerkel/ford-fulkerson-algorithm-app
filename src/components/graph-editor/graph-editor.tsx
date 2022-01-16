@@ -527,7 +527,7 @@ class GraphEditor extends React.Component<Props, State> {
         const displayStep = this.state.displaySteps![this.state.currentStep!]
 
         return <>
-            {displayStep.map((displayLink, index) =>
+            {displayStep.links.map((displayLink, index) =>
                 <g key={index}
                    className='link'>
 
@@ -586,7 +586,10 @@ class GraphEditor extends React.Component<Props, State> {
     }
 
     renderFlowWidget(): ReactElement {
-        const maxFlow = -1
+        const displaySteps = this.state.displaySteps!
+        const currentStep = this.state.currentStep!
+
+        const maxFlow = displaySteps[currentStep].maxFlow
 
         return (
             <div id='flow' className='widget widget-bg'>
