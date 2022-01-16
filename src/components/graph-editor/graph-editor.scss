@@ -150,4 +150,10 @@
   .space {
     width: 8px;
   }
+
+  /* Solution Mode */
+
+  .solution-mode, .solution-mode * {
+    cursor: default;
+  }
 }

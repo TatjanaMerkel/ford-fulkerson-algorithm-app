@@ -441,50 +441,31 @@ class GraphEditor extends React.Component<Props, State> {
     render() {
         return (
             <div id='graph-editor'>
-                <svg ref={this.svg}
-                     onContextMenu={(event => event.preventDefault())}
-                     onMouseDown={(event) => this.spawnNode(event)}
-                     onMouseMove={(event) => this.moveDragLine(event)}
-                     onMouseUp={this.cancelDragLine}>
+                {this.state.mode === Mode.EDIT &&
+                    <svg ref={this.svg}
+                         onContextMenu={(event => event.preventDefault())}
+                         onMouseDown={(event) => this.spawnNode(event)}
+                         onMouseMove={(event) => this.moveDragLine(event)}
+                         onMouseUp={this.cancelDragLine}>
 
-                    <defs>
-                        <marker id='end-arrow'
-                                viewBox='0 -5 10 10'
-                                refX={6}
-                                markerWidth={3} markerHeight={3}
-                                orient='auto'>
+                        {this.renderDefs()}
+                        {this.renderDragLine()}
+                        {this.renderLinks()}
+                        {this.renderNodes()}
+                    </svg>
+                }
 
-                            <path d='M 0 -5 L 10 0 L 0 5'/>
-                        </marker>
+                {this.state.mode === Mode.SOLUTION &&
+                    <svg ref={this.svg}
+                         className='solution-mode'
+                         onContextMenu={(event => event.preventDefault())}>
 
-                        <marker id='current-path-end-arrow'
-                                viewBox='0 -5 10 10'
-                                refX={6}
-                                markerWidth={3} markerHeight={3}
-                                orient='auto'>
-
-                            <path d='M 0 -5 L 10 0 L 0 5'/>
-                        </marker>
-
-                        <marker id='bottleneck-link-end-arrow'
-                                viewBox='0 -5 10 10'
-                                refX={6}
-                                markerWidth={3} markerHeight={3}
-                                orient='auto'>
-
-                            <path d='M 0 -5 L 10 0 L 0 5'/>
-                        </marker>
-                    </defs>
-
-                    <line className={`dragLine ${this.state.dragStartNode === null ? 'hidden' : ''}`}
-                          x1={this.state.dragLine.x1}
-                          y1={this.state.dragLine.y1}
-                          x2={this.state.dragLine.x2}
-                          y2={this.state.dragLine.y2}/>
-
-                    {this.state.mode === Mode.EDIT ? this.renderLinks() : this.renderStepLinks()}
-                    {this.renderNodes()}
-                </svg>
+                        {this.renderDefs()}
+                        {this.renderDragLine()}
+                        {this.renderStepLinks()}
+                        {this.renderNodes()}
+                    </svg>
+                }
 
                 {this.state.mode === Mode.EDIT && this.state.selectedNode && this.renderNodeWidget()}
                 {this.state.mode === Mode.EDIT && this.state.selectedLink && this.renderLinkWidget()}
@@ -495,6 +476,47 @@ class GraphEditor extends React.Component<Props, State> {
                 {this.state.mode === Mode.SOLUTION && this.renderEditButton()}
             </div>
         )
+    }
+
+    renderDefs(): ReactElement {
+        return <>
+            <defs>
+                <marker id='end-arrow'
+                        viewBox='0 -5 10 10'
+                        refX={6}
+                        markerWidth={3} markerHeight={3}
+                        orient='auto'>
+
+                    <path d='M 0 -5 L 10 0 L 0 5'/>
+                </marker>
+
+                <marker id='current-path-end-arrow'
+                        viewBox='0 -5 10 10'
+                        refX={6}
+                        markerWidth={3} markerHeight={3}
+                        orient='auto'>
+
+                    <path d='M 0 -5 L 10 0 L 0 5'/>
+                </marker>
+
+                <marker id='bottleneck-link-end-arrow'
+                        viewBox='0 -5 10 10'
+                        refX={6}
+                        markerWidth={3} markerHeight={3}
+                        orient='auto'>
+
+                    <path d='M 0 -5 L 10 0 L 0 5'/>
+                </marker>
+            </defs>
+        </>
+    }
+
+    renderDragLine(): ReactElement {
+        return <line className={`dragLine ${this.state.dragStartNode === null ? 'hidden' : ''}`}
+                     x1={this.state.dragLine.x1}
+                     y1={this.state.dragLine.y1}
+                     x2={this.state.dragLine.x2}
+                     y2={this.state.dragLine.y2}/>
     }
 
     renderLinks(): ReactElement {
@@ -571,11 +593,19 @@ class GraphEditor extends React.Component<Props, State> {
                    className='node'
                    transform={`translate(${node.x},${node.y})`}>
 
-                    <circle r={20}
-                            fill={node === this.state.selectedNode ? d3.rgb(node.color).brighter().toString() : node.color}
-                            stroke={d3.rgb(node.color).darker().toString()}
-                            onMouseDown={(event) => this.startDragLine(event, node)}
-                            onMouseUp={() => this.onCircleMouseUp(node)}/>
+                    {this.state.mode === Mode.EDIT &&
+                        <circle r={20}
+                                fill={node === this.state.selectedNode ? d3.rgb(node.color).brighter().toString() : node.color}
+                                stroke={d3.rgb(node.color).darker().toString()}
+                                onMouseDown={(event) => this.startDragLine(event, node)}
+                                onMouseUp={() => this.onCircleMouseUp(node)}/>
+                    }
+
+                    {this.state.mode === Mode.SOLUTION &&
+                        <circle r={20}
+                                fill={node === this.state.selectedNode ? d3.rgb(node.color).brighter().toString() : node.color}
+                                stroke={d3.rgb(node.color).darker().toString()}/>
+                    }
 
                     <text style={{fill: node === this.sourceNode || node === this.sinkNode ? 'black' : 'white'}}>
                         {node.name}
