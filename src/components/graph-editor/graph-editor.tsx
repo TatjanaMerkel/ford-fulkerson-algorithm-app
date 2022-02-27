@@ -443,41 +443,43 @@ class GraphEditor extends React.Component<Props, State> {
     render() {
         return (
             <div id='graph-editor'>
-                <FontAwesomeIcon className="icon" icon={faCoffee} />
-
                 {this.state.mode === Mode.EDIT &&
-                    <svg ref={this.svg}
-                         onContextMenu={(event => event.preventDefault())}
-                         onMouseDown={(event) => this.spawnNode(event)}
-                         onMouseMove={(event) => this.moveDragLine(event)}
-                         onMouseUp={this.cancelDragLine}>
+                    <>
+                        <svg ref={this.svg}
+                             onContextMenu={(event => event.preventDefault())}
+                             onMouseDown={(event) => this.spawnNode(event)}
+                             onMouseMove={(event) => this.moveDragLine(event)}
+                             onMouseUp={this.cancelDragLine}>
 
-                        {this.renderDefs()}
-                        {this.renderDragLine()}
-                        {this.renderLinks()}
-                        {this.renderNodes()}
-                    </svg>
+                            {this.renderDefs()}
+                            {this.renderDragLine()}
+                            {this.renderLinks()}
+                            {this.renderNodes()}
+                        </svg>
+
+                        {this.state.selectedNode && this.renderNodeWidget()}
+                        {this.state.selectedLink && this.renderLinkWidget()}
+                        {this.renderSolveButton()}
+                    </>
                 }
 
                 {this.state.mode === Mode.SOLUTION &&
-                    <svg ref={this.svg}
-                         className='solution-mode'
-                         onContextMenu={(event => event.preventDefault())}>
+                    <>
+                        <svg ref={this.svg}
+                             className='solution-mode'
+                             onContextMenu={(event => event.preventDefault())}>
 
-                        {this.renderDefs()}
-                        {this.renderDragLine()}
-                        {this.renderStepLinks()}
-                        {this.renderNodes()}
-                    </svg>
+                            {this.renderDefs()}
+                            {this.renderDragLine()}
+                            {this.renderStepLinks()}
+                            {this.renderNodes()}
+                        </svg>
+
+                        {this.renderFlowWidget()}
+                        {this.renderStepper()}
+                        {this.renderEditButton()}
+                    </>
                 }
-
-                {this.state.mode === Mode.EDIT && this.state.selectedNode && this.renderNodeWidget()}
-                {this.state.mode === Mode.EDIT && this.state.selectedLink && this.renderLinkWidget()}
-                {this.state.mode === Mode.EDIT && this.renderSolveButton()}
-
-                {this.state.mode === Mode.SOLUTION && this.renderFlowWidget()}
-                {this.state.mode === Mode.SOLUTION && this.renderStepper()}
-                {this.state.mode === Mode.SOLUTION && this.renderEditButton()}
             </div>
         )
     }
