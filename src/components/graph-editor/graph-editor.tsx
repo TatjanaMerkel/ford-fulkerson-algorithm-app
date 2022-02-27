@@ -4,7 +4,9 @@ import {Simulation} from 'd3'
 import React, {ChangeEvent, ReactElement, RefObject} from 'react'
 import Stepper from '../Stepper/Stepper'
 import {fordFulkerson} from '../../ford-fulkerson/ford-fulkerson'
-import {DisplayLink, DisplayStep, getDisplaySteps} from "./display-steps";
+import {DisplayLink, DisplayStep, getDisplaySteps} from './display-steps'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faCoffee } from '@fortawesome/free-solid-svg-icons'
 
 interface Node {
     name: string
@@ -441,6 +443,8 @@ class GraphEditor extends React.Component<Props, State> {
     render() {
         return (
             <div id='graph-editor'>
+                <FontAwesomeIcon className="icon" icon={faCoffee} />
+
                 {this.state.mode === Mode.EDIT &&
                     <svg ref={this.svg}
                          onContextMenu={(event => event.preventDefault())}
