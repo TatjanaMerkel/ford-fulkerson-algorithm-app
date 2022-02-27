@@ -120,6 +120,19 @@
     border-radius: 8px;
   }
 
+  .drag-button {
+    width: 32px;
+    height: 32px;
+
+    bottom: 0;
+    right: 100px;
+
+    border: solid black 1px;
+    border-radius: 8px;
+
+    cursor: pointer;
+  }
+
   table {
     top: 0;
     right: 0;
@@ -155,10 +168,5 @@
 
   .solution-mode, .solution-mode * {
     cursor: default;
-  }
-
-  .icon {
-    width: 40px;
-    height: 40px;
   }
 }

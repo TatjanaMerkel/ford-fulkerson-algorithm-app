@@ -6,7 +6,8 @@ import Stepper from '../Stepper/Stepper'
 import {fordFulkerson} from '../../ford-fulkerson/ford-fulkerson'
 import {DisplayLink, DisplayStep, getDisplaySteps} from './display-steps'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faCoffee } from '@fortawesome/free-solid-svg-icons'
+import { faArrowsUpDownLeftRight } from '@fortawesome/free-solid-svg-icons'
+import { faArrowUpRightFromSquare } from '@fortawesome/free-solid-svg-icons'
 
 interface Node {
     name: string
@@ -27,6 +28,7 @@ interface Props {
 
 interface State {
     mode: Mode
+    dragMode: DragMode
 
     nodes: Node[]
     links: Link[]
@@ -49,6 +51,11 @@ interface State {
 enum Mode {
     EDIT,
     SOLUTION
+}
+
+enum DragMode {
+    LINE,
+    NODE
 }
 
 class GraphEditor extends React.Component<Props, State> {
@@ -88,6 +95,7 @@ class GraphEditor extends React.Component<Props, State> {
 
         this.state = {
             mode: Mode.EDIT,
+            dragMode: DragMode.LINE,
 
             nodes,
             links,
@@ -121,6 +129,7 @@ class GraphEditor extends React.Component<Props, State> {
         this.spawnNode = this.spawnNode.bind(this)
         this.moveDragLine = this.moveDragLine.bind(this)
         this.cancelDragLine = this.cancelDragLine.bind(this)
+        this.toggleDragMode = this.toggleDragMode.bind(this)
     }
 
     /// componentDidMount()
@@ -460,6 +469,11 @@ class GraphEditor extends React.Component<Props, State> {
                         {this.state.selectedNode && this.renderNodeWidget()}
                         {this.state.selectedLink && this.renderLinkWidget()}
                         {this.renderSolveButton()}
+
+                        {this.state.dragMode === DragMode.LINE
+                            ? this.renderDragLineButton()
+                            : this.renderDragNodeButton()
+                        }
                     </>
                 }
 
@@ -710,6 +724,29 @@ class GraphEditor extends React.Component<Props, State> {
             <button id='edit-button' className='widget warning-button'
                     onClick={this.edit}>Edit</button>
         )
+    }
+
+    renderDragLineButton(): ReactElement {
+        return (
+            <FontAwesomeIcon className="widget icon drag-button"
+                             icon={faArrowUpRightFromSquare}
+                             onClick={this.toggleDragMode}/>
+        )
+    }
+
+    renderDragNodeButton(): ReactElement {
+        return (
+            <FontAwesomeIcon className="widget icon drag-button"
+                             icon={faArrowsUpDownLeftRight}
+                             onClick={this.toggleDragMode}/>
+        )
+    }
+
+    toggleDragMode(): void {
+        switch (this.state.dragMode) {
+            case DragMode.LINE: this.setState({dragMode: DragMode.NODE}); break
+            case DragMode.NODE: this.setState({dragMode: DragMode.LINE}); break
+        }
     }
 
     renderSolveButton(): ReactElement {
