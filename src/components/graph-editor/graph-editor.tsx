@@ -261,7 +261,19 @@ class GraphEditor extends React.Component<Props, State> {
     }
 
     startDragNode(node: Node) {
-        this.setState({dragMode: DragMode.NODE, dragNode: node})
+        if (node.fx === null && node.fy === null) {
+            this.setState({dragMode: DragMode.NODE, dragNode: node})
+        } else {
+            node.fx = null
+            node.fy = null
+
+            this.restartSim()
+
+            const nodes = this.state.nodes.slice(0)
+
+            this.setState({nodes})
+        }
+
     }
 
     move(event: React.MouseEvent<SVGSVGElement>) {
