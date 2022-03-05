@@ -8,8 +8,9 @@ interface Link {
 }
 
 interface ResidualLink {
+    link: Link
     target: Node
-    flow: number
+    residualCapacity: number
 }
 
 interface LogEntry {
@@ -45,12 +46,12 @@ function createResidualGraph(nodes: Node[], links: Link[]): ResidualGraph {
 
     for (const link of links) {
         const sourceResLinks = resGraph.get(link.source) || []
-        const sourceResLink = {target: link.target, flow: link.capacity}
+        const sourceResLink = {link, target: link.target, residualCapacity: link.capacity}
         sourceResLinks.push(sourceResLink)
         resGraph.set(link.source, sourceResLinks)
 
         const targetResLinks = resGraph.get(link.target) || []
-        const targetResLink = {target: link.source, flow: 0}
+        const targetResLink = {link, target: link.source, residualCapacity: 0}
         targetResLinks.push(targetResLink)
         resGraph.set(link.target, targetResLinks)
     }
@@ -76,7 +77,7 @@ function depthFirstSearch(path: Node[], visited: Set<Node>, residualGraph: Resid
     }
 
     // residual links with flow > 0
-    const resLinks = residualGraph.get(lastNode)!.filter(resLink => resLink.flow > 0)
+    const resLinks = residualGraph.get(lastNode)!.filter(resLink => resLink.residualCapacity > 0)
 
     if (resLinks.length === 0) {
         return null
@@ -104,7 +105,7 @@ function bottleneck(path: Node[], residualGraph: ResidualGraph): number {
     let minFlow = Infinity
 
     iteratePath(path, residualGraph, (sourceResLink) => {
-        minFlow = Math.min(minFlow, sourceResLink.flow)
+        minFlow = Math.min(minFlow, sourceResLink.residualCapacity)
     })
 
     return minFlow
@@ -114,8 +115,8 @@ function augment(path: Node[], residualGraph: ResidualGraph): void {
     const minFlow = bottleneck(path, residualGraph)
 
     iteratePath(path, residualGraph, (sourceResLink, targetResLink) => {
-        sourceResLink.flow -= minFlow
-        targetResLink.flow += minFlow
+        sourceResLink.residualCapacity -= minFlow
+        targetResLink.residualCapacity += minFlow
     })
 }
 
@@ -138,13 +139,13 @@ function iteratePath(path: Node[],
 
 function setLinkFlows(residualGraph: ResidualGraph, links: Link[]): void {
     for (const link of links) {
-        const resLink = residualGraph.get(link.target)!.filter(resLink => resLink.target === link.source)[0]
-        link.flow = resLink.flow
+        const resLink = residualGraph.get(link.target)!.filter(resLink => resLink.link === link)[0]
+        link.flow = resLink.residualCapacity
     }
 }
 
 function getTotalFlow(residualGraph: ResidualGraph): number {
-    return residualGraph.get(sinkNode)!.reduce((acc: number, next: ResidualLink) => acc + next.flow, 0)
+    return residualGraph.get(sinkNode)!.reduce((acc: number, next: ResidualLink) => acc + next.residualCapacity, 0)
 }
 
 function logState(
