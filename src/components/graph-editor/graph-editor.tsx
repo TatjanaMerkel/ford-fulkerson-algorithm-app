@@ -573,6 +573,7 @@ class GraphEditor extends React.Component<Props, State> {
                         </svg>
 
                         {this.renderFlowWidget()}
+                        {this.renderPseudocode()}
                         {this.renderStepper()}
                         {this.renderEditButton()}
                     </>
@@ -728,6 +729,25 @@ class GraphEditor extends React.Component<Props, State> {
             <div id='flow' className='widget widget-bg'>
                 Flow: {maxFlow}
             </div>
+        )
+    }
+
+    renderPseudocode(): ReactElement {
+        return (
+            <ol id='pseudocode' className='widget widget-bg'>
+                <li className='current-step'><b>Schritt 1:</b><br/>
+                    Beginne mit dem Nullfluss (Initialisiere alle Kanten mit Flow = 0)</li>
+                <li><b>Schritt 2:</b>
+                    <ol>
+                        <li>Suche einen f-ungesättigten Pfad von der Quelle (A) zur Senke (Z)</li>
+                        <li>Ermittle den Flaschenhals des Pfades (Kante mit geringster Restkapazität)</li>
+                        <li>Augmentiere die Kanten des Pfades mit dem Wert des Flaschenhalses</li>
+                    </ol>
+                </li>
+                <li><b>Ergebnis:</b><br/>
+                    Es existiert kein f-ungesättigter Pfad von der Quelle zur Senke.
+                    Der Fluss ist maximal.</li>
+            </ol>
         )
     }
 

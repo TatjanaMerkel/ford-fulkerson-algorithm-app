@@ -4,8 +4,8 @@
 
   position: relative;
 
-  max-width: 1000px;
-  height: 500px;
+  width: 100vw;
+  height: 100vh;
 
   margin: auto;
 
@@ -101,6 +101,31 @@
     padding: 8px;
 
     font-weight: bold;
+  }
+
+  #pseudocode {
+    width: 360px;
+
+    top: 0;
+    right: 0;
+
+    padding: 8px;
+
+    ol {
+      list-style-type: none;
+      padding-left: 10px;
+    }
+
+
+    list-style-type: none;
+
+    .current-step {
+      background-color: yellow;
+    }
+
+    li:not(:first-child) {
+      margin-top: 8px;
+    }
   }
 
   #stepper {
