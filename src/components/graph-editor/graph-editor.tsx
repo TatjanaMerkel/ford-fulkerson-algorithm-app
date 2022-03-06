@@ -616,6 +616,15 @@ class GraphEditor extends React.Component<Props, State> {
                     <path d='M 0 -5 L 10 0 L 0 5'/>
                 </marker>
 
+                <marker id='current-path-reverse-end-arrow'
+                        viewBox='0 -5 10 10'
+                        refX={6}
+                        markerWidth={3} markerHeight={3}
+                        orient='auto'>
+
+                    <path d='M 0 -5 L 10 0 L 0 5'/>
+                </marker>
+
                 <marker id='bottleneck-link-end-arrow'
                         viewBox='0 -5 10 10'
                         refX={6}
@@ -673,6 +682,7 @@ class GraphEditor extends React.Component<Props, State> {
                     <path id={`${displayLink.source}${displayLink.target}`}
                           className={[
                               ...(displayLink.isOnPath ? ['current-path'] : []),
+                              ...(displayLink.isOnPathReverse ? ['current-path-reverse'] : []),
                               ...(displayLink.isBottleneck ? ['bottleneck'] : [])
                           ].join(' ')}
                           d={this.getLinkPath(this.displayLinkToLink(displayLink))}/>

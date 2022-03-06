@@ -8,6 +8,7 @@ interface DisplayLink {
     capacity: number
 
     isOnPath: boolean
+    isOnPathReverse: boolean
     isBottleneck: boolean
     isAugmented: boolean
 }
@@ -25,6 +26,7 @@ function getDisplaySteps(logs: LogEntry[]): DisplayStep[] {
         ...link,
         flow: null,
         isOnPath: false,
+        isOnPathReverse: false,
         isBottleneck: false,
         isAugmented: false
     }))
@@ -41,6 +43,7 @@ function getDisplaySteps(logs: LogEntry[]): DisplayStep[] {
         const displayLinks = log.links.map(link => ({
             ...link,
             isOnPath: false,
+            isOnPathReverse: false,
             isBottleneck: false,
             isAugmented: false
         }))
@@ -49,6 +52,8 @@ function getDisplaySteps(logs: LogEntry[]): DisplayStep[] {
         for (const displayLink of displayLinksWithPath) {
             if (pathContainsDisplayLink(log.path!, displayLink)) {
                 displayLink.isOnPath = true
+            } else if (pathContainsReverseDisplayLink(log.path!, displayLink)) {
+                displayLink.isOnPathReverse = true
             }
         }
 
@@ -94,6 +99,7 @@ function getDisplaySteps(logs: LogEntry[]): DisplayStep[] {
     const lastStepDisplayLinks = logs[logs.length - 1].links.map(link => ({
         ...link,
         isOnPath: false,
+        isOnPathReverse: false,
         isBottleneck: false,
         isAugmented: false
     }))
@@ -117,6 +123,20 @@ function pathContainsDisplayLink(path: number[], link: DisplayLink) {
 
     for (let secondNode of path.slice(1)) {
         if (firstNode === link.source && secondNode === link.target) {
+            return true
+        }
+
+        firstNode = secondNode
+    }
+
+    return false
+}
+
+function pathContainsReverseDisplayLink(path: number[], link: DisplayLink) {
+    let firstNode = path[0]
+
+    for (let secondNode of path.slice(1)) {
+        if (firstNode === link.target && secondNode === link.source) {
             return true
         }
 

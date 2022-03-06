@@ -51,6 +51,12 @@
     marker-end: url(#current-path-end-arrow);
   }
 
+  .link path.current-path-reverse {
+    stroke: $blue-900;
+
+    marker-end: url(#current-path-reverse-end-arrow);
+  }
+
   .link path.bottleneck {
     stroke: $red-700;
 
@@ -63,6 +69,10 @@
 
   #current-path-end-arrow path {
     fill: $blue-700;
+  }
+
+  #current-path-reverse-end-arrow path {
+    fill: $blue-900;
   }
 
   #bottleneck-link-end-arrow path {
