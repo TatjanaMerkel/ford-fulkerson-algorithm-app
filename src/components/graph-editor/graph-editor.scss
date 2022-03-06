@@ -111,20 +111,24 @@
 
     padding: 8px;
 
-    ol {
+    ul {
+      padding-left: 16px;
+
+      list-style: initial;
+
+      li:not(:first-child) {
+        margin-top: 8px;
+      }
+
+      li.current-step {
+        background-color: yellow;
+      }
+    }
+
+    > ul {
+      padding-left: 0;
+
       list-style-type: none;
-      padding-left: 10px;
-    }
-
-
-    list-style-type: none;
-
-    .current-step {
-      background-color: yellow;
-    }
-
-    li:not(:first-child) {
-      margin-top: 8px;
     }
   }
 
