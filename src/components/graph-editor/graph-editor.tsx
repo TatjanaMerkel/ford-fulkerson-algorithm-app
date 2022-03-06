@@ -702,7 +702,7 @@ class GraphEditor extends React.Component<Props, State> {
                                   startOffset='50%'>
 
                             <tspan dy={-10}
-                                   className={displayLink.isAugmented ? 'augmented' : ''}>
+                                   className={displayLink.isAugmented ? 'augmented' : displayLink.isAugmentedReverse ? 'augmented-reverse' : ''}>
                                 {displayLink.flow === null
                                     ? displayLink.capacity.toString()
                                     : `${displayLink.flow} / ${displayLink.capacity}`}

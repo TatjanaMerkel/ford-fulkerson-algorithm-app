@@ -12,6 +12,7 @@ interface DisplayLink {
     isBottleneck: boolean
     isBottleneckReverse: boolean
     isAugmented: boolean
+    isAugmentedReverse: boolean
 }
 
 interface DisplayStep {
@@ -30,7 +31,8 @@ function getDisplaySteps(logs: LogEntry[]): DisplayStep[] {
         isOnPathReverse: false,
         isBottleneck: false,
         isBottleneckReverse: false,
-        isAugmented: false
+        isAugmented: false,
+        isAugmentedReverse: false
     }))
 
     displaySteps.push({
@@ -48,7 +50,8 @@ function getDisplaySteps(logs: LogEntry[]): DisplayStep[] {
             isOnPathReverse: false,
             isBottleneck: false,
             isBottleneckReverse: false,
-            isAugmented: false
+            isAugmented: false,
+            isAugmentedReverse: false
         }))
 
         const displayLinksWithPath = JSON.parse(JSON.stringify(displayLinks))
@@ -101,7 +104,7 @@ function getDisplaySteps(logs: LogEntry[]): DisplayStep[] {
                 displayLink.isAugmented = true
             } else if (displayLink.isOnPathReverse) {
                 displayLink.flow -= bottleneck
-                displayLink.isAugmented = true
+                displayLink.isAugmentedReverse = true
             }
         }
 
@@ -123,7 +126,8 @@ function getDisplaySteps(logs: LogEntry[]): DisplayStep[] {
         isOnPathReverse: false,
         isBottleneck: false,
         isBottleneckReverse: false,
-        isAugmented: false
+        isAugmented: false,
+        isAugmentedReverse: false
     }))
 
     const maxFlowDelta = logs[logs.length - 1].maxFlow - prevMaxFlow

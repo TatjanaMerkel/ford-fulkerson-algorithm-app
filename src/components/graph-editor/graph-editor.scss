@@ -52,7 +52,7 @@
   }
 
   .link path.current-path-reverse {
-    stroke: $blue-900;
+    stroke: $deep-purple-a-400;
 
     marker-end: url(#current-path-reverse-end-arrow);
   }
@@ -64,7 +64,7 @@
   }
 
   .link path.bottleneck-reverse {
-    stroke: $red-900;
+    stroke: $purple-a-400;
 
     marker-end: url(#bottleneck-link-reverse-end-arrow);
   }
@@ -78,7 +78,7 @@
   }
 
   #current-path-reverse-end-arrow path {
-    fill: $blue-900;
+    fill: $deep-purple-a-400;
   }
 
   #bottleneck-link-end-arrow path {
@@ -86,11 +86,16 @@
   }
 
   #bottleneck-link-reverse-end-arrow path {
-    fill: $red-900;
+    fill: $purple-a-400;
   }
 
   tspan.augmented {
     fill: $red-700;
+    font-weight: bold;
+  }
+
+  tspan.augmented-reverse {
+    fill: $purple-a-400;
     font-weight: bold;
   }
 
