@@ -1,9 +1,9 @@
-import {Link, LogEntry} from '../../ford-fulkerson/ford-fulkerson'
+import {LogEntry} from '../../ford-fulkerson/ford-fulkerson'
 
 interface DisplayLink {
     source: number
     target: number
-    flow: number
+    flow: number | null
     capacity: number
 
     isOnPath: boolean
@@ -19,6 +19,16 @@ interface DisplayStep {
 function getDisplaySteps(logs: LogEntry[]): DisplayStep[] {
     const displaySteps = []
 
+    const firstStepDisplayLinks = logs[0].links.map(link => ({
+        ...link,
+        flow: null,
+        isOnPath: false,
+        isBottleneck: false,
+        isAugmented: false
+    }))
+
+    displaySteps.push({links: firstStepDisplayLinks, maxFlow: 0})
+
     for (const log of logs.slice(0, logs.length - 1)) {
         const displayLinks = log.links.map(link => ({
             ...link,
@@ -29,7 +39,7 @@ function getDisplaySteps(logs: LogEntry[]): DisplayStep[] {
 
         const displayLinksWithPath = JSON.parse(JSON.stringify(displayLinks))
         for (const displayLink of displayLinksWithPath) {
-            if (pathContainsLink(log.path!, displayLinkToLink(displayLink))) {
+            if (pathContainsDisplayLink(log.path!, displayLink)) {
                 displayLink.isOnPath = true
             }
         }
@@ -79,7 +89,7 @@ function getDisplaySteps(logs: LogEntry[]): DisplayStep[] {
     return displaySteps
 }
 
-function pathContainsLink(path: number[], link: Link) {
+function pathContainsDisplayLink(path: number[], link: DisplayLink) {
     let firstNode = path[0]
 
     for (let secondNode of path.slice(1)) {
@@ -91,15 +101,6 @@ function pathContainsLink(path: number[], link: Link) {
     }
 
     return false
-}
-
-function displayLinkToLink(displayLink: DisplayLink): Link {
-    return {
-        source: displayLink.source,
-        target: displayLink.target,
-        flow: displayLink.flow,
-        capacity: displayLink.capacity
-    }
 }
 
 export {getDisplaySteps}

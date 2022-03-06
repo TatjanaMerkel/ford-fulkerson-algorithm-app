@@ -29,12 +29,14 @@ function fordFulkerson(nodes: Node[], links: Link[]): LogEntry[] {
     const logs: LogEntry[] = []
 
     let path = findAugmentingPath(resGraph)
+    setLinkFlows(resGraph, links)
     logState(resGraph, path, logs, nodes, links)
 
     while (path !== null) {
         augment(path, resGraph)
 
         path = findAugmentingPath(resGraph)
+        setLinkFlows(resGraph, links)
         logState(resGraph, path, logs, nodes, links)
     }
 
@@ -155,8 +157,6 @@ function logState(
     nodes: Node[],
     links: Link[]
 ): void {
-    setLinkFlows(residualGraph, links)
-
     logs.push({
         maxFlow: getTotalFlow(residualGraph),
         nodes: nodes,

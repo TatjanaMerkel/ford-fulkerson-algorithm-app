@@ -670,8 +670,8 @@ class GraphEditor extends React.Component<Props, State> {
 
                             <tspan dy={-10}
                                    className={displayLink.isAugmented ? 'augmented' : ''}>
-                                {this.state.mode === Mode.EDIT
-                                    ? String(displayLink.capacity)
+                                {displayLink.flow === null
+                                    ? displayLink.capacity.toString()
                                     : `${displayLink.flow} / ${displayLink.capacity}`}
                             </tspan>
                         </textPath>
@@ -685,7 +685,7 @@ class GraphEditor extends React.Component<Props, State> {
         return {
             source: this.state.nodes[displayLink.source],
             target: this.state.nodes[displayLink.target],
-            flow: displayLink.flow,
+            flow: 0,
             capacity: displayLink.capacity
         }
     }
