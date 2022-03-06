@@ -736,11 +736,15 @@ class GraphEditor extends React.Component<Props, State> {
         const displaySteps = this.state.displaySteps!
         const currentStep = this.state.currentStep!
 
-        const maxFlow = displaySteps[currentStep].maxFlow
+        const maxFlowAddends = displaySteps[currentStep].maxFlowAddends
+        const maxFlowAddendsSum = maxFlowAddends.reduce((a, b) => a + b, 0)
+        const maxFlowText = maxFlowAddends.length === 0 ? '0' : maxFlowAddends.length === 1
+            ? maxFlowAddends[0]
+            : `${maxFlowAddends.join(' + ')} = ${maxFlowAddendsSum}`
 
         return (
             <div id='flow' className='widget widget-bg'>
-                Flow: {maxFlow}
+                Max Flow:<br/>{maxFlowText}
             </div>
         )
     }

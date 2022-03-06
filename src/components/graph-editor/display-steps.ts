@@ -14,12 +14,12 @@ interface DisplayLink {
 
 interface DisplayStep {
     links: DisplayLink[]
-    maxFlow: number
     command: Command | null
+    maxFlowAddends: number[]
 }
 
 function getDisplaySteps(logs: LogEntry[]): DisplayStep[] {
-    const displaySteps = []
+    const displaySteps: DisplayStep[] = []
 
     const firstStepDisplayLinks = logs[0].links.map(link => ({
         ...link,
@@ -29,7 +29,13 @@ function getDisplaySteps(logs: LogEntry[]): DisplayStep[] {
         isAugmented: false
     }))
 
-    displaySteps.push({links: firstStepDisplayLinks, maxFlow: 0, command: Command.COMMAND_1})
+    displaySteps.push({
+        links: firstStepDisplayLinks,
+        command: Command.COMMAND_1,
+        maxFlowAddends: []
+    })
+
+    let prevMaxFlow = 0
 
     for (const log of logs.slice(0, logs.length - 1)) {
         const displayLinks = log.links.map(link => ({
@@ -73,10 +79,16 @@ function getDisplaySteps(logs: LogEntry[]): DisplayStep[] {
             }
         }
 
-        displaySteps.push({links: displayLinks, maxFlow: log.maxFlow, command: Command.COMMAND_2_1})
-        displaySteps.push({links: displayLinksWithPath, maxFlow: log.maxFlow, command: Command.COMMAND_2_2})
-        displaySteps.push({links: displayLinksWithBottleneck, maxFlow: log.maxFlow, command: Command.COMMAND_2_3})
-        displaySteps.push({links: displayLinksAugmented, maxFlow: log.maxFlow, command: Command.COMMAND_2_4})
+        const maxFlowDelta = log.maxFlow - prevMaxFlow
+        prevMaxFlow = log.maxFlow
+
+        const prevMaxFlowAddends: number[] = displaySteps[displaySteps.length - 1].maxFlowAddends
+        const nextMaxFlowAddends: number[] = [...prevMaxFlowAddends, maxFlowDelta]
+
+        displaySteps.push({links: displayLinks, command: Command.COMMAND_2_1, maxFlowAddends: nextMaxFlowAddends})
+        displaySteps.push({links: displayLinksWithPath, command: Command.COMMAND_2_2, maxFlowAddends: nextMaxFlowAddends})
+        displaySteps.push({links: displayLinksWithBottleneck, command: Command.COMMAND_2_3, maxFlowAddends: nextMaxFlowAddends})
+        displaySteps.push({links: displayLinksAugmented, command: Command.COMMAND_2_4, maxFlowAddends: nextMaxFlowAddends})
     }
 
     const lastStepDisplayLinks = logs[logs.length - 1].links.map(link => ({
@@ -86,7 +98,16 @@ function getDisplaySteps(logs: LogEntry[]): DisplayStep[] {
         isAugmented: false
     }))
 
-    displaySteps.push({links: lastStepDisplayLinks, maxFlow: logs[logs.length - 1].maxFlow, command: Command.COMMAND_RESULT})
+    const maxFlowDelta = logs[logs.length - 1].maxFlow - prevMaxFlow
+
+    const prevMaxFlowAddends: number[] = displaySteps[displaySteps.length - 1].maxFlowAddends
+    const nextMaxFlowAddends: number[] = [...prevMaxFlowAddends, maxFlowDelta]
+
+    displaySteps.push({
+        links: lastStepDisplayLinks,
+        command: Command.COMMAND_RESULT,
+        maxFlowAddends: nextMaxFlowAddends
+    })
 
     return displaySteps
 }
