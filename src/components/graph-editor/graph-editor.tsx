@@ -50,6 +50,8 @@ interface State {
 
     currentStep: null | number
     displaySteps: null | DisplayStep[]
+
+    currentCommand: null | Command
 }
 
 enum Mode {
@@ -60,6 +62,15 @@ enum Mode {
 enum DragMode {
     LINE,
     NODE
+}
+
+enum Command {
+    COMMAND_1,
+    COMMAND_2_1,
+    COMMAND_2_2,
+    COMMAND_2_3,
+    COMMAND_2_4,
+    COMMAND_RESULT
 }
 
 class GraphEditor extends React.Component<Props, State> {
@@ -118,7 +129,9 @@ class GraphEditor extends React.Component<Props, State> {
             dragNode: null,
 
             currentStep: null,
-            displaySteps: null
+            displaySteps: null,
+
+            currentCommand: null
         }
 
         this.svg = React.createRef()
@@ -225,7 +238,7 @@ class GraphEditor extends React.Component<Props, State> {
 
         const displaySteps = getDisplaySteps(logs)
 
-        this.setState({mode: Mode.SOLUTION, displaySteps, currentStep: 0})
+        this.setState({mode: Mode.SOLUTION, displaySteps, currentStep: 0, currentCommand: Command.COMMAND_1})
     }
 
     edit(): void {
@@ -736,18 +749,31 @@ class GraphEditor extends React.Component<Props, State> {
         return (
             <div id='pseudocode' className='widget widget-bg'>
                 <ul>
-                    <li className='current-step'><b>Schritt 1:</b><br/>
+                    <li className={this.state.currentCommand === Command.COMMAND_1 ? 'current-step' : ''}>
+                        <b>Schritt 1:</b><br/>
                         Beginne mit dem Nullfluss (Initialisiere alle Kanten mit Flow = 0)</li>
-                    <li><b>Schritt 2:</b>
+                    <li>
+                        <b>Schritt 2:</b>
                         <ul>
-                            <li>Suche einen f-ungesättigten Pfad von der Quelle (A) zur Senke (Z)</li>
-                            <li>Ermittle den Flaschenhals des Pfades (Kante mit geringster Restkapazität)</li>
-                            <li>Augmentiere die Kanten des Pfades mit dem Wert des Flaschenhalses</li>
+                            <li className={this.state.currentCommand === Command.COMMAND_2_1 ? 'current-step' : ''}>
+                                Suche einen f-ungesättigten Pfad von der Quelle (A) zur Senke (Z)
+                            </li>
+                            <li className={this.state.currentCommand === Command.COMMAND_2_2 ? 'current-step' : ''}>
+                                Ermittle den Flaschenhals des Pfades (Kante mit geringster Restkapazität)
+                            </li>
+                            <li className={this.state.currentCommand === Command.COMMAND_2_3 ? 'current-step' : ''}>
+                                Augmentiere die Kanten des Pfades mit dem Wert des Flaschenhalses
+                            </li>
+                            <li className={this.state.currentCommand === Command.COMMAND_2_4 ? 'current-step' : ''}>
+                                Pfad abgeschlossen
+                            </li>
                         </ul>
                     </li>
-                    <li><b>Ergebnis:</b><br/>
+                    <li className={this.state.currentCommand === Command.COMMAND_RESULT ? 'current-step' : ''}>
+                        <b>Ergebnis:</b><br/>
                         Es existiert kein f-ungesättigter Pfad von der Quelle zur Senke.
-                        Der Fluss ist maximal.</li>
+                        Der Fluss ist maximal.
+                    </li>
                 </ul>
             </div>
         )
@@ -820,7 +846,10 @@ class GraphEditor extends React.Component<Props, State> {
     renderStepper(): ReactElement {
         return (
             <Stepper stepCount={this.state.displaySteps!.length}
-                     onCurrentStepChange={(currentStep: number) => this.setState({currentStep})}/>
+                     onCurrentStepChange={(currentStep: number) => {
+                         this.setState({currentStep})
+                         this.setState({currentCommand: this.state.displaySteps![currentStep].command})
+                     }}/>
         )
     }
 
@@ -862,4 +891,4 @@ class GraphEditor extends React.Component<Props, State> {
     }
 }
 
-export {GraphEditor}
+export {Command, GraphEditor}

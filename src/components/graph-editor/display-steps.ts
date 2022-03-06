@@ -1,4 +1,5 @@
 import {LogEntry} from '../../ford-fulkerson/ford-fulkerson'
+import {Command} from "./graph-editor";
 
 interface DisplayLink {
     source: number
@@ -14,6 +15,7 @@ interface DisplayLink {
 interface DisplayStep {
     links: DisplayLink[]
     maxFlow: number
+    command: Command | null
 }
 
 function getDisplaySteps(logs: LogEntry[]): DisplayStep[] {
@@ -27,7 +29,7 @@ function getDisplaySteps(logs: LogEntry[]): DisplayStep[] {
         isAugmented: false
     }))
 
-    displaySteps.push({links: firstStepDisplayLinks, maxFlow: 0})
+    displaySteps.push({links: firstStepDisplayLinks, maxFlow: 0, command: Command.COMMAND_1})
 
     for (const log of logs.slice(0, logs.length - 1)) {
         const displayLinks = log.links.map(link => ({
@@ -71,10 +73,10 @@ function getDisplaySteps(logs: LogEntry[]): DisplayStep[] {
             }
         }
 
-        displaySteps.push({links: displayLinks, maxFlow: log.maxFlow})
-        displaySteps.push({links: displayLinksWithPath, maxFlow: log.maxFlow})
-        displaySteps.push({links: displayLinksWithBottleneck, maxFlow: log.maxFlow})
-        displaySteps.push({links: displayLinksAugmented, maxFlow: log.maxFlow})
+        displaySteps.push({links: displayLinks, maxFlow: log.maxFlow, command: Command.COMMAND_2_1})
+        displaySteps.push({links: displayLinksWithPath, maxFlow: log.maxFlow, command: Command.COMMAND_2_2})
+        displaySteps.push({links: displayLinksWithBottleneck, maxFlow: log.maxFlow, command: Command.COMMAND_2_3})
+        displaySteps.push({links: displayLinksAugmented, maxFlow: log.maxFlow, command: Command.COMMAND_2_4})
     }
 
     const lastStepDisplayLinks = logs[logs.length - 1].links.map(link => ({
@@ -84,7 +86,7 @@ function getDisplaySteps(logs: LogEntry[]): DisplayStep[] {
         isAugmented: false
     }))
 
-    displaySteps.push({links: lastStepDisplayLinks, maxFlow: logs[logs.length - 1].maxFlow})
+    displaySteps.push({links: lastStepDisplayLinks, maxFlow: logs[logs.length - 1].maxFlow, command: Command.COMMAND_RESULT})
 
     return displaySteps
 }
