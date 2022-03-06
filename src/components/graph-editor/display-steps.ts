@@ -10,6 +10,7 @@ interface DisplayLink {
     isOnPath: boolean
     isOnPathReverse: boolean
     isBottleneck: boolean
+    isBottleneckReverse: boolean
     isAugmented: boolean
 }
 
@@ -28,6 +29,7 @@ function getDisplaySteps(logs: LogEntry[]): DisplayStep[] {
         isOnPath: false,
         isOnPathReverse: false,
         isBottleneck: false,
+        isBottleneckReverse: false,
         isAugmented: false
     }))
 
@@ -45,6 +47,7 @@ function getDisplaySteps(logs: LogEntry[]): DisplayStep[] {
             isOnPath: false,
             isOnPathReverse: false,
             isBottleneck: false,
+            isBottleneckReverse: false,
             isAugmented: false
         }))
 
@@ -59,15 +62,26 @@ function getDisplaySteps(logs: LogEntry[]): DisplayStep[] {
 
         const displayLinksWithBottleneck = JSON.parse(JSON.stringify(displayLinksWithPath))
         let bottleneckLinks = []
+        let bottleneckLinksReverse = []
         let bottleneck = Infinity
         for (const displayLink of displayLinksWithBottleneck) {
             if (displayLink.isOnPath) {
                 const remainingCapacity = displayLink.capacity - displayLink.flow
                 if (remainingCapacity < bottleneck) {
                     bottleneckLinks = [displayLink]
+                    bottleneckLinksReverse = []
                     bottleneck = remainingCapacity
                 } else if (remainingCapacity === bottleneck) {
                     bottleneckLinks.push(displayLink)
+                }
+            } else if (displayLink.isOnPathReverse) {
+                const remainingCapacity = displayLink.flow
+                if (remainingCapacity < bottleneck) {
+                    bottleneckLinksReverse = [displayLink]
+                    bottleneckLinks = []
+                    bottleneck = remainingCapacity
+                } else if (remainingCapacity === bottleneck) {
+                    bottleneckLinksReverse.push(displayLink)
                 }
             }
         }
@@ -76,10 +90,17 @@ function getDisplaySteps(logs: LogEntry[]): DisplayStep[] {
             bottleneckLink.isBottleneck = true
         }
 
+        for (const bottleneckLinkReverse of bottleneckLinksReverse) {
+            bottleneckLinkReverse.isBottleneckReverse = true
+        }
+
         const displayLinksAugmented = JSON.parse(JSON.stringify(displayLinksWithBottleneck))
         for (const displayLink of displayLinksAugmented) {
             if (displayLink.isOnPath) {
                 displayLink.flow += bottleneck
+                displayLink.isAugmented = true
+            } else if (displayLink.isOnPathReverse) {
+                displayLink.flow -= bottleneck
                 displayLink.isAugmented = true
             }
         }
@@ -101,6 +122,7 @@ function getDisplaySteps(logs: LogEntry[]): DisplayStep[] {
         isOnPath: false,
         isOnPathReverse: false,
         isBottleneck: false,
+        isBottleneckReverse: false,
         isAugmented: false
     }))
 

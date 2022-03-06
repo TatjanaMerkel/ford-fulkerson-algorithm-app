@@ -63,6 +63,12 @@
     marker-end: url(#bottleneck-link-end-arrow);
   }
 
+  .link path.bottleneck-reverse {
+    stroke: $red-900;
+
+    marker-end: url(#bottleneck-link-reverse-end-arrow);
+  }
+
   #end-arrow {
     fill: black;
   }
@@ -77,6 +83,10 @@
 
   #bottleneck-link-end-arrow path {
     fill: $red-700;
+  }
+
+  #bottleneck-link-reverse-end-arrow path {
+    fill: $red-900;
   }
 
   tspan.augmented {
