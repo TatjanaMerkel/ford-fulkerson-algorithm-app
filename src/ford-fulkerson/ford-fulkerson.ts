@@ -19,6 +19,7 @@ interface LogEntry {
     links: Link[]
     residualGraph: ResidualGraph
     path: Node[] | null
+    pathLinks: any
 }
 
 type ResidualGraph = Map<Node, ResidualLink[]>
@@ -28,16 +29,20 @@ function fordFulkerson(nodes: Node[], links: Link[]): LogEntry[] {
     const resGraph = createResidualGraph(nodes, links)
     const logs: LogEntry[] = []
 
-    let path = findAugmentingPath(resGraph)
+    let pathAndLinks: any = findAugmentingPath(resGraph)
+    let path = pathAndLinks.path
+    let pathLinks = pathAndLinks.pathLinks
     setLinkFlows(resGraph, links)
-    logState(resGraph, path, logs, nodes, links)
+    logState(resGraph, path, pathLinks, logs, nodes, links)
 
     while (path !== null) {
         augment(path, resGraph)
 
-        path = findAugmentingPath(resGraph)
+        pathAndLinks = findAugmentingPath(resGraph)
+        path = pathAndLinks.path
+        pathLinks = pathAndLinks.pathLinks
         setLinkFlows(resGraph, links)
-        logState(resGraph, path, logs, nodes, links)
+        logState(resGraph, path, pathLinks, logs, nodes, links)
     }
 
     return logs
@@ -64,25 +69,25 @@ function createResidualGraph(nodes: Node[], links: Link[]): ResidualGraph {
 const sourceNode = 0
 const sinkNode = 1
 
-function findAugmentingPath(residualGraph: ResidualGraph): Node[] | null {
+function findAugmentingPath(residualGraph: ResidualGraph){
     const visited = new Set<Node>()
 
-    return depthFirstSearch([sourceNode], visited, residualGraph)
+    return depthFirstSearch([sourceNode], [null], visited, residualGraph)
 }
 
-function depthFirstSearch(path: Node[], visited: Set<Node>, residualGraph: ResidualGraph): Node[] | null {
+function depthFirstSearch(path: Node[], pathLinks: any, visited: Set<Node>, residualGraph: ResidualGraph) {
     const lastNode = path[path.length - 1]
     visited.add(lastNode)
 
     if (lastNode === sinkNode) {
-        return path
+        return {path, pathLinks}
     }
 
     // residual links with flow > 0
     const resLinks = residualGraph.get(lastNode)!.filter(resLink => resLink.residualCapacity > 0)
 
     if (resLinks.length === 0) {
-        return null
+        return {path: null, pathLinks: null}
     }
 
     for (const resLink of resLinks) {
@@ -90,17 +95,21 @@ function depthFirstSearch(path: Node[], visited: Set<Node>, residualGraph: Resid
 
         if (!visited.has(targetNode)) {
             const newPath = path.slice(0)
+            const newPathLinks = pathLinks.slice(0)
             newPath.push(targetNode)
+            newPathLinks.push(resLink.link)
 
-            const resultPath = depthFirstSearch(newPath, visited, residualGraph)
+            const result: any = depthFirstSearch(newPath, newPathLinks, visited, residualGraph);
+            const resultPath = result.path
+            const resultPathLinks = result.pathLinks
 
             if (resultPath !== null) {
-                return resultPath
+                return {path: resultPath, pathLinks: resultPathLinks}
             }
         }
     }
 
-    return null
+    return {path: null, pathLinks: null}
 }
 
 function bottleneck(path: Node[], residualGraph: ResidualGraph): number {
@@ -153,6 +162,7 @@ function getTotalFlow(residualGraph: ResidualGraph): number {
 function logState(
     residualGraph: ResidualGraph,
     path: Node[] | null,
+    pathLinks: any,
     logs: LogEntry[],
     nodes: Node[],
     links: Link[]
@@ -162,6 +172,7 @@ function logState(
         nodes: nodes,
         links: copy(links),
         path: copy(path),
+        pathLinks: copy(pathLinks),
         residualGraph: copy(residualGraph)
     })
 }

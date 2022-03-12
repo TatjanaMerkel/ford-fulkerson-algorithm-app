@@ -56,9 +56,9 @@ function getDisplaySteps(logs: LogEntry[]): DisplayStep[] {
 
         const displayLinksWithPath = JSON.parse(JSON.stringify(displayLinks))
         for (const displayLink of displayLinksWithPath) {
-            if (pathContainsDisplayLink(log.path!, displayLink)) {
+            if (pathContainsDisplayLink(log.path!, log.pathLinks, displayLink)) {
                 displayLink.isOnPath = true
-            } else if (pathContainsReverseDisplayLink(log.path!, displayLink)) {
+            } else if (pathContainsReverseDisplayLink(log.path!, log.pathLinks, displayLink)) {
                 displayLink.isOnPathReverse = true
             }
         }
@@ -144,11 +144,14 @@ function getDisplaySteps(logs: LogEntry[]): DisplayStep[] {
     return displaySteps
 }
 
-function pathContainsDisplayLink(path: number[], link: DisplayLink) {
+function pathContainsDisplayLink(path: number[], pathLinks: any, link: DisplayLink) {
     let firstNode = path[0]
 
-    for (let secondNode of path.slice(1)) {
-        if (firstNode === link.source && secondNode === link.target) {
+    for (let i = 1; i < path.length; i++) {
+        const secondNode = path[i]
+        const linkToSecondNode = pathLinks[i]
+
+        if (firstNode === link.source && secondNode === link.target && firstNode === linkToSecondNode.source) {
             return true
         }
 
@@ -158,11 +161,14 @@ function pathContainsDisplayLink(path: number[], link: DisplayLink) {
     return false
 }
 
-function pathContainsReverseDisplayLink(path: number[], link: DisplayLink) {
+function pathContainsReverseDisplayLink(path: number[], pathLinks: any, link: DisplayLink) {
     let firstNode = path[0]
 
-    for (let secondNode of path.slice(1)) {
-        if (firstNode === link.target && secondNode === link.source) {
+    for (let i = 1; i < path.length; i++) {
+        const secondNode = path[i]
+        const linkToSecondNode = pathLinks[i]
+
+        if (firstNode === link.target && secondNode === link.source && firstNode === linkToSecondNode.target) {
             return true
         }
 
