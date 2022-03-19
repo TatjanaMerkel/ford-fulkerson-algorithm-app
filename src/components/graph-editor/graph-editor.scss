@@ -1,0 +1,230 @@
+@use '../../assets/css/colors.scss' as *;
+
+#graph-editor {
+
+  position: relative;
+
+  width: 100vw;
+  height: 100vh;
+
+  margin: auto;
+
+  /* SVG elements */
+
+  svg {
+    width: 100%;
+    height: 100%;
+
+    background-color: #99c9cb;
+
+    cursor: crosshair;
+
+    user-select: none;
+  }
+
+  .node, .link {
+    cursor: pointer;
+  }
+
+  .node text {
+    fill: white;
+
+    font-weight: bold;
+    text-anchor: middle;
+    dominant-baseline: middle;
+
+    pointer-events: none;
+  }
+
+  .link path, .dragLine {
+    stroke: black;
+    stroke-width: 5px;
+
+    fill: none;
+
+    marker-end: url(#end-arrow);
+  }
+
+  .link path.current-path {
+    stroke: $blue-700;
+
+    marker-end: url(#current-path-end-arrow);
+  }
+
+  .link path.current-path-reverse {
+    stroke: $deep-purple-a-400;
+
+    marker-end: url(#current-path-reverse-end-arrow);
+  }
+
+  .link path.bottleneck {
+    stroke: $red-700;
+
+    marker-end: url(#bottleneck-link-end-arrow);
+  }
+
+  .link path.bottleneck-reverse {
+    stroke: $purple-a-400;
+
+    marker-end: url(#bottleneck-link-reverse-end-arrow);
+  }
+
+  #end-arrow {
+    fill: black;
+  }
+
+  #current-path-end-arrow path {
+    fill: $blue-700;
+  }
+
+  #current-path-reverse-end-arrow path {
+    fill: $deep-purple-a-400;
+  }
+
+  #bottleneck-link-end-arrow path {
+    fill: $red-700;
+  }
+
+  #bottleneck-link-reverse-end-arrow path {
+    fill: $purple-a-400;
+  }
+
+  tspan.augmented {
+    fill: $red-700;
+    font-weight: bold;
+  }
+
+  tspan.augmented-reverse {
+    fill: $purple-a-400;
+    font-weight: bold;
+  }
+
+  .dragLine {
+    cursor: default;
+  }
+
+  /* UI widgets */
+
+  .widget {
+    position: absolute;
+
+    margin: 16px;
+    padding: 4px;
+  }
+
+  .widget-bg {
+    background-color: rgba(255, 255, 255, 0.5);
+    border-radius: 8px;
+  }
+
+  #flow {
+    top: 0;
+    left: 50%;
+
+    transform: translate(-50%, 0);
+
+    padding: 8px;
+
+    text-align: center;
+  }
+
+  #pseudocode {
+    width: 360px;
+
+    top: 0;
+    right: 0;
+
+    padding: 8px;
+
+    ul {
+      padding-left: 16px;
+
+      list-style: initial;
+
+      li:not(:first-child) {
+        margin-top: 8px;
+      }
+
+      li.current-step {
+        background-color: yellow;
+      }
+    }
+
+    > ul {
+      padding-left: 0;
+
+      list-style-type: none;
+    }
+  }
+
+  #stepper {
+    width: 200px;
+    bottom: 0;
+    left: 50%;
+    transform: translate(-50%, 0);
+  }
+
+  #solve-button, #edit-button {
+    width: 80px;
+    height: 40px;
+
+    bottom: 0;
+    right: 0;
+
+    border-radius: 8px;
+  }
+
+  .drag-button {
+    width: 32px;
+    height: 32px;
+
+    bottom: 0;
+    right: 100px;
+
+    border: solid black 1px;
+    border-radius: 8px;
+
+    cursor: pointer;
+  }
+
+  table {
+    top: 0;
+    right: 0;
+
+    border-spacing: 8px;
+
+    input {
+      width: 40px;
+
+      padding: 2px;
+
+      text-align: center;
+    }
+
+    button {
+      width: 100%;
+
+      padding: 4px;
+    }
+  }
+
+  /* Other */
+
+  .hidden {
+    display: none;
+  }
+
+  .space {
+    width: 8px;
+  }
+
+  .red {
+    color: red;
+  }
+
+  /* Solution Mode */
+
+  .solution-mode, .solution-mode * {
+    cursor: default;
+  }
+}

@@ -1,0 +1,76 @@
+@use 'colors.scss' as *;
+
+button {
+    cursor: pointer;
+
+    color: white;
+    background-image: linear-gradient(180deg, rgba(255, 255, 255, .15), rgba(255, 255, 255, 0));
+
+    font-size: 1rem;
+    font-weight: 400;
+
+    border: none;
+
+    transition: background-color 0.3s;
+}
+
+button {
+    background-color: $blue-900;
+}
+
+button:hover {
+    background-color: $blue-800;
+}
+
+button:active {
+    background-color: $blue-700;
+}
+
+/* Disabled Button */
+
+button:disabled, button:disabled:hover, button:disabled:active {
+    background-color: $grey-600;
+    cursor: default
+}
+
+/* Confirm Button */
+
+.confirm-button {
+    background-color: $green-800;
+}
+
+.confirm-button:hover {
+    background-color: $green-700;
+}
+
+.confirm-button:active {
+    background-color: $green-600;
+}
+
+/* Warning Button */
+
+.warning-button {
+    background-color: $yellow-800;
+}
+
+.warning-button:hover {
+    background-color: $yellow-700;
+}
+
+.warning-button:active {
+    background-color: $yellow-600;
+}
+
+/* Danger Button */
+
+.danger-button {
+    background-color: $red-800;
+}
+
+.danger-button:hover {
+    background-color: $red-700;
+}
+
+.danger-button:active {
+    background-color: $red-600;
+}
