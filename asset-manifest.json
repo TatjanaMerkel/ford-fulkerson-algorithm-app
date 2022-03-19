@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/ford-fulkerson-algorithm-app/static/css/main.3a0c8bd5.css",
+    "main.js": "/ford-fulkerson-algorithm-app/static/js/main.9606e9f5.js",
+    "static/js/787.e86bfb59.chunk.js": "/ford-fulkerson-algorithm-app/static/js/787.e86bfb59.chunk.js",
+    "index.html": "/ford-fulkerson-algorithm-app/index.html",
+    "main.3a0c8bd5.css.map": "/ford-fulkerson-algorithm-app/static/css/main.3a0c8bd5.css.map",
+    "main.9606e9f5.js.map": "/ford-fulkerson-algorithm-app/static/js/main.9606e9f5.js.map",
+    "787.e86bfb59.chunk.js.map": "/ford-fulkerson-algorithm-app/static/js/787.e86bfb59.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.3a0c8bd5.css",
+    "static/js/main.9606e9f5.js"
+  ]
+}
